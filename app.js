@@ -45,6 +45,8 @@ let miniCalDate = new Date();
 let editingSubtasks = [];
 let activeTaskTab = null; // null = show all, or a category id
 let activeBoardFilter = null; // null = show all, or a category id
+let scheduleDate = new Date(); // date shown in the schedule panel
+let calViewMode = 'month'; // 'month' or 'week'
 
 // ========== DOM Refs ==========
 const $ = (sel) => document.querySelector(sel);
@@ -100,12 +102,54 @@ function bindEvents() {
   $('#searchInput').addEventListener('input', renderTasksView);
 
   // Calendar nav
-  $('#calPrev').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
-  $('#calNext').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
+  $('#calPrev').addEventListener('click', () => {
+    if (calViewMode === 'month') {
+      calendarDate.setMonth(calendarDate.getMonth() - 1);
+    } else {
+      calendarDate.setDate(calendarDate.getDate() - 7);
+    }
+    renderCalendar();
+  });
+  $('#calNext').addEventListener('click', () => {
+    if (calViewMode === 'month') {
+      calendarDate.setMonth(calendarDate.getMonth() + 1);
+    } else {
+      calendarDate.setDate(calendarDate.getDate() + 7);
+    }
+    renderCalendar();
+  });
+
+  // Calendar view toggle
+  $('#calMonthBtn').addEventListener('click', () => {
+    calViewMode = 'month';
+    $('#calMonthBtn').classList.add('active');
+    $('#calWeekBtn').classList.remove('active');
+    renderCalendar();
+  });
+  $('#calWeekBtn').addEventListener('click', () => {
+    calViewMode = 'week';
+    $('#calWeekBtn').classList.add('active');
+    $('#calMonthBtn').classList.remove('active');
+    renderCalendar();
+  });
 
   // Mini calendar nav
   $('#miniCalPrev').addEventListener('click', () => { miniCalDate.setMonth(miniCalDate.getMonth() - 1); renderMiniCalendar(); });
   $('#miniCalNext').addEventListener('click', () => { miniCalDate.setMonth(miniCalDate.getMonth() + 1); renderMiniCalendar(); });
+
+  // Schedule day nav
+  $('#schedulePrev').addEventListener('click', () => {
+    scheduleDate.setDate(scheduleDate.getDate() - 1);
+    renderSchedule();
+  });
+  $('#scheduleNext').addEventListener('click', () => {
+    scheduleDate.setDate(scheduleDate.getDate() + 1);
+    renderSchedule();
+  });
+  $('#scheduleToday').addEventListener('click', () => {
+    scheduleDate = new Date();
+    renderSchedule();
+  });
 
   // Add category
   $('#addCategoryBtn').addEventListener('click', handleAddCategory);
@@ -470,14 +514,26 @@ function renderMiniCalendar() {
 
 // ========== Daily Schedule ==========
 function renderSchedule() {
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  const currentHour = today.getHours();
+  const now = new Date();
+  const nowStr = now.toISOString().split('T')[0];
+  const viewDate = new Date(scheduleDate);
+  const viewStr = viewDate.toISOString().split('T')[0];
+  const isToday = viewStr === nowStr;
+  const currentHour = isToday ? now.getHours() : -1;
 
-  $('#scheduleDate').textContent = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  // Update title and date label
+  if (isToday) {
+    $('#scheduleTitle').textContent = "Today's Schedule";
+  } else {
+    $('#scheduleTitle').textContent = 'Schedule';
+  }
+  $('#scheduleDate').textContent = viewDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
-  // Get tasks due today
-  const todayTasks = state.tasks.filter(t => t.dueDate === todayStr && t.status !== 'done');
+  // Show/hide Today button
+  $('#scheduleToday').style.display = isToday ? 'none' : '';
+
+  // Get tasks due on the viewed date
+  const todayTasks = state.tasks.filter(t => t.dueDate === viewStr && t.status !== 'done');
   const scheduled = todayTasks.filter(t => t.scheduledHour != null);
   const unscheduled = todayTasks.filter(t => t.scheduledHour == null);
 
@@ -597,9 +653,8 @@ function renderSchedule() {
       if (task) {
         task.scheduledHour = hour;
         if (!task.duration) task.duration = 1;
-        // If task wasn't due today, set it
-        const todayStr = new Date().toISOString().split('T')[0];
-        if (!task.dueDate) task.dueDate = todayStr;
+        // If task wasn't due on this date, set it
+        if (!task.dueDate) task.dueDate = viewStr;
         saveData(state);
         render();
       }
@@ -615,6 +670,18 @@ function renderSchedule() {
 
 // ========== Calendar View ==========
 function renderCalendar() {
+  if (calViewMode === 'month') {
+    $('#calMonthView').style.display = '';
+    $('#calWeekView').style.display = 'none';
+    renderCalendarMonth();
+  } else {
+    $('#calMonthView').style.display = 'none';
+    $('#calWeekView').style.display = '';
+    renderCalendarWeek();
+  }
+}
+
+function renderCalendarMonth() {
   const year = calendarDate.getFullYear();
   const month = calendarDate.getMonth();
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -663,6 +730,92 @@ function renderCalendar() {
   });
 }
 
+function renderCalendarWeek() {
+  // Find the Sunday of the current week
+  const d = new Date(calendarDate);
+  const dayOfWeek = d.getDay();
+  const weekStart = new Date(d);
+  weekStart.setDate(d.getDate() - dayOfWeek);
+
+  const today = new Date().toISOString().split('T')[0];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // Update header to show week range
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const startMonth = monthNames[weekStart.getMonth()];
+  const endMonth = monthNames[weekEnd.getMonth()];
+  if (startMonth === endMonth) {
+    $('#calMonth').textContent = `${startMonth} ${weekStart.getDate()} - ${weekEnd.getDate()}, ${weekEnd.getFullYear()}`;
+  } else {
+    $('#calMonth').textContent = `${startMonth} ${weekStart.getDate()} - ${endMonth} ${weekEnd.getDate()}, ${weekEnd.getFullYear()}`;
+  }
+
+  // Get holidays for this week
+  const holidays = [
+    ...getUSHolidays(weekStart.getFullYear()),
+    ...(weekStart.getFullYear() !== weekEnd.getFullYear() ? getUSHolidays(weekEnd.getFullYear()) : [])
+  ];
+
+  // Build week columns
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const colDate = new Date(weekStart);
+    colDate.setDate(weekStart.getDate() + i);
+    const dateStr = colDate.toISOString().split('T')[0];
+    const isToday = dateStr === today;
+    const holiday = holidays.find(h => h.date === dateStr);
+    const dayTasks = state.tasks.filter(t => t.dueDate === dateStr);
+
+    // Separate scheduled vs unscheduled
+    const scheduled = dayTasks.filter(t => t.scheduledHour != null).sort((a, b) => a.scheduledHour - b.scheduledHour);
+    const unscheduled = dayTasks.filter(t => t.scheduledHour == null);
+
+    html += `
+      <div class="week-col${isToday ? ' today' : ''}">
+        <div class="week-col-header">
+          <span class="week-col-day">${dayNames[i]}</span>
+          <span class="week-col-num${isToday ? ' today' : ''}">${colDate.getDate()}</span>
+        </div>
+        ${holiday ? `<div class="cal-holiday">${esc(holiday.name)}</div>` : ''}
+        <div class="week-col-tasks">
+          ${scheduled.map(t => {
+            const cat = state.categories.find(c => c.id === t.category);
+            const hour12 = t.scheduledHour > 12 ? t.scheduledHour - 12 : t.scheduledHour;
+            const ampm = t.scheduledHour >= 12 ? 'PM' : 'AM';
+            return `
+              <div class="week-task" data-id="${t.id}">
+                <span class="week-task-time">${hour12}${ampm}</span>
+                <div class="week-task-info">
+                  <div class="week-task-name priority-border-${t.priority}">${esc(t.name)}</div>
+                  ${cat ? `<span class="week-task-cat" style="color:${cat.color}"><span class="category-dot" style="background:${cat.color}"></span>${cat.name}</span>` : ''}
+                </div>
+              </div>`;
+          }).join('')}
+          ${unscheduled.map(t => {
+            const cat = state.categories.find(c => c.id === t.category);
+            return `
+              <div class="week-task" data-id="${t.id}">
+                <div class="week-task-info">
+                  <div class="week-task-name priority-border-${t.priority}">${esc(t.name)}</div>
+                  ${cat ? `<span class="week-task-cat" style="color:${cat.color}"><span class="category-dot" style="background:${cat.color}"></span>${cat.name}</span>` : ''}
+                </div>
+              </div>`;
+          }).join('')}
+          ${!dayTasks.length ? '<div class="week-empty">No tasks</div>' : ''}
+        </div>
+      </div>`;
+  }
+
+  $('#weekGrid').innerHTML = html;
+
+  // Bind week task clicks
+  $$('.week-task').forEach(el => {
+    el.addEventListener('click', () => openModal(el.dataset.id));
+  });
+}
+
 // ========== Modal ==========
 function populateScheduleHourDropdown() {
   const sel = $('#taskScheduledHour');
@@ -686,6 +839,9 @@ function openModal(taskId = null, scheduledHour = null) {
     const task = state.tasks.find(t => t.id === taskId);
     if (!task) return;
     $('#modalTitle').textContent = 'Edit Task';
+    $('#modalSubtitle').textContent = 'Update the task details';
+    $('#modalIcon').classList.add('editing');
+    $('#modalIcon').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     $('#taskId').value = task.id;
     $('#taskName').value = task.name;
     $('#taskDesc').value = task.description || '';
@@ -696,9 +852,12 @@ function openModal(taskId = null, scheduledHour = null) {
     $('#taskScheduledHour').value = task.scheduledHour != null ? task.scheduledHour : '';
     $('#taskDuration').value = task.duration || '1';
     editingSubtasks = task.subtasks ? task.subtasks.map(s => ({ ...s })) : [];
-    $('#deleteBtn').style.display = 'block';
+    $('#deleteBtn').style.display = 'inline-flex';
   } else {
     $('#modalTitle').textContent = 'New Task';
+    $('#modalSubtitle').textContent = 'Fill in the details below';
+    $('#modalIcon').classList.remove('editing');
+    $('#modalIcon').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
     $('#taskId').value = '';
     $('#deleteBtn').style.display = 'none';
     if (scheduledHour != null) {
