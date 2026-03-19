@@ -1136,14 +1136,14 @@ body {
 .board-filters {
   display: flex;
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
 .board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 24px;
   min-height: 70vh;
 }
 
@@ -1151,7 +1151,7 @@ body {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
 }
@@ -1160,8 +1160,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -1176,16 +1176,20 @@ body {
 .column-dot.done { background: var(--green); }
 
 .column-header h3 {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   flex: 1;
+  color: var(--text-secondary);
 }
 
 .column-count {
   background: var(--bg-primary);
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 10px;
   color: var(--text-muted);
 }
 
@@ -1196,27 +1200,29 @@ body {
   flex: 1;
   overflow-y: auto;
   min-height: 100px;
+  padding-right: 2px;
 }
 
 .board-card {
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 14px;
+  padding: 14px 16px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
 .board-card:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
 }
 
 .board-card-name {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  line-height: 1.4;
 }
 
 .board-card-footer {
@@ -1230,11 +1236,87 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .board-card-category .category-dot { width: 8px; height: 8px; }
+
+.board-card .priority-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+
+/* ========== Board Column – Category Folders ========== */
+.board-folder {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.board-folder-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.board-folder-header:hover {
+  background: var(--bg-hover);
+}
+
+.board-folder-chevron {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.board-folder.open .board-folder-chevron {
+  transform: rotate(90deg);
+}
+
+.board-folder-name {
+  flex: 1;
+}
+
+.board-folder-count {
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  padding: 1px 7px;
+  border-radius: 8px;
+}
+
+.board-folder-body {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 8px 8px;
+}
+
+.board-folder.open .board-folder-body {
+  display: flex;
+}
+
+.board-folder-body .board-card {
+  border-color: transparent;
+  background: var(--bg-secondary);
+}
+
+.board-folder-body .board-card:hover {
+  border-color: var(--accent);
+}
 
 /* ========== Calendar View ========== */
 .calendar-header {

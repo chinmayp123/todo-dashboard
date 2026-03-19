@@ -45,6 +45,7 @@ let miniCalDate = new Date();
 let editingSubtasks = [];
 let activeTaskTab = null; // null = show all, or a category id
 let activeBoardFilter = null; // null = show all, or a category id
+let boardFoldersCollapsed = {}; // track collapsed state of board category folders
 let scheduleDate = new Date(); // date shown in the schedule panel
 let calViewMode = 'month'; // 'month' or 'week'
 
@@ -417,23 +418,71 @@ function renderBoard() {
   const containers = { todo: $('#boardTodo'), 'in-progress': $('#boardProgress'), done: $('#boardDone') };
   const counts = { todo: $('#boardTodoCount'), 'in-progress': $('#boardProgressCount'), done: $('#boardDoneCount') };
 
+  const renderCard = (t) => {
+    const cat = state.categories.find(c => c.id === t.category);
+    return `
+      <div class="board-card" data-id="${t.id}">
+        <div class="board-card-name">${esc(t.name)}</div>
+        <div class="board-card-footer">
+          ${cat ? `<span class="board-card-category"><span class="category-dot" style="background:${cat.color}"></span>${cat.name}</span>` : '<span></span>'}
+          <span class="priority-badge ${t.priority}">${t.priority}</span>
+        </div>
+      </div>`;
+  };
+
   statuses.forEach(status => {
     let tasks = state.tasks.filter(t => t.status === status);
     if (activeBoardFilter) {
       tasks = tasks.filter(t => t.category === activeBoardFilter);
     }
     counts[status].textContent = tasks.length;
-    containers[status].innerHTML = tasks.length ? tasks.map(t => {
+
+    if (!tasks.length) {
+      containers[status].innerHTML = '<div class="empty-state"><p>No tasks</p></div>';
+      return;
+    }
+
+    // Group tasks into collapsible category folders
+    const grouped = {};
+    tasks.forEach(t => {
       const cat = state.categories.find(c => c.id === t.category);
+      const key = cat ? cat.id : '_uncategorized';
+      if (!grouped[key]) grouped[key] = { cat, tasks: [] };
+      grouped[key].tasks.push(t);
+    });
+
+    const folderKey = (status, catKey) => `${status}_${catKey}`;
+
+    containers[status].innerHTML = Object.entries(grouped).map(([key, group]) => {
+      const fKey = folderKey(status, key);
+      const isOpen = !boardFoldersCollapsed[fKey];
+      const catName = group.cat ? group.cat.name : 'Uncategorized';
+      const catColor = group.cat ? group.cat.color : 'var(--text-muted)';
       return `
-        <div class="board-card" data-id="${t.id}">
-          <div class="board-card-name">${esc(t.name)}</div>
-          <div class="board-card-footer">
-            ${cat ? `<span class="board-card-category"><span class="category-dot" style="background:${cat.color}"></span>${cat.name}</span>` : '<span></span>'}
-            <span class="priority-badge ${t.priority}">${t.priority}</span>
+        <div class="board-folder ${isOpen ? 'open' : ''}" data-folder="${fKey}">
+          <div class="board-folder-header" data-folder="${fKey}">
+            <svg class="board-folder-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="category-dot" style="background:${catColor}"></span>
+            <span class="board-folder-name">${catName}</span>
+            <span class="board-folder-count">${group.tasks.length}</span>
+          </div>
+          <div class="board-folder-body">
+            ${group.tasks.map(renderCard).join('')}
           </div>
         </div>`;
-    }).join('') : '<div class="empty-state"><p>No tasks</p></div>';
+    }).join('');
+  });
+
+  // Bind folder toggle
+  $$('.board-folder-header').forEach(header => {
+    header.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = header.dataset.folder;
+      boardFoldersCollapsed[key] = !boardFoldersCollapsed[key];
+      header.closest('.board-folder').classList.toggle('open');
+    });
   });
 
   // Bind click
