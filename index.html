@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow Dashboard</title>
+  <title>LifeStack Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,8 +11,14 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="logo">
-        <div class="logo-icon">T</div>
-        <span>TaskFlow</span>
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="4" rx="1.5" fill="white" opacity="1"/>
+            <rect x="3" y="10" width="14" height="4" rx="1.5" fill="white" opacity="0.7"/>
+            <rect x="3" y="16" width="10" height="4" rx="1.5" fill="white" opacity="0.45"/>
+          </svg>
+        </div>
+        <span>LifeStack</span>
       </div>
       <nav class="nav">
         <button class="nav-btn active" data-view="dashboard">
@@ -31,11 +37,25 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Calendar
         </button>
+        <div class="nav-divider"></div>
+        <button class="nav-btn" data-view="gym">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7v10"/><path d="M18 7v10"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6 12h12"/><rect x="5" y="7" width="2" height="10" rx="1"/><rect x="17" y="7" width="2" height="10" rx="1"/><rect x="2" y="9" width="2" height="6" rx="0.5"/><rect x="20" y="9" width="2" height="6" rx="0.5"/></svg>
+          Gym
+        </button>
+        <button class="nav-btn" data-view="diet">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          Diet
+        </button>
       </nav>
       <div class="sidebar-categories">
         <h3>Categories</h3>
         <div class="category-list" id="categoryList"></div>
         <button class="add-category-btn" id="addCategoryBtn">+ Add Category</button>
+      </div>
+      <div class="sidebar-projects">
+        <h3>Projects</h3>
+        <div class="project-list" id="projectList"></div>
+        <button class="add-category-btn" id="addProjectBtn">+ Add Project</button>
       </div>
     </aside>
 
@@ -98,40 +118,16 @@
           </div>
         </div>
 
+        <!-- Reminders -->
+        <div class="reminders-bar" id="remindersBar"></div>
+
         <!-- Dashboard Grid -->
         <div class="dashboard-grid">
-          <!-- Mini Calendar -->
-          <div class="card mini-calendar-card">
-            <div class="mini-cal-header">
-              <h2 id="miniCalMonth"></h2>
-              <div class="mini-cal-nav">
-                <button class="mini-cal-btn" id="miniCalPrev">&lt;</button>
-                <button class="mini-cal-btn" id="miniCalNext">&gt;</button>
-              </div>
-            </div>
-            <div class="mini-cal-grid">
-              <span class="mini-cal-day-name">S</span>
-              <span class="mini-cal-day-name">M</span>
-              <span class="mini-cal-day-name">T</span>
-              <span class="mini-cal-day-name">W</span>
-              <span class="mini-cal-day-name">T</span>
-              <span class="mini-cal-day-name">F</span>
-              <span class="mini-cal-day-name">S</span>
-              <div class="mini-cal-days" id="miniCalDays"></div>
-            </div>
-          </div>
-
           <!-- My Tasks Board -->
           <div class="card my-tasks-board-card">
             <h2>My Tasks</h2>
             <div class="my-tasks-tabs" id="myTasksTabs"></div>
             <div class="my-tasks-board" id="myTasksBoard"></div>
-          </div>
-
-          <!-- Priority Breakdown -->
-          <div class="card priority-card">
-            <h2>By Priority</h2>
-            <div class="priority-bars" id="priorityBars"></div>
           </div>
 
           <!-- Upcoming Deadlines -->
@@ -167,12 +163,6 @@
               <option value="in-progress">In Progress</option>
               <option value="done">Done</option>
             </select>
-            <select id="filterPriority">
-              <option value="all">All Priority</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
             <select id="filterCategory">
               <option value="all">All Categories</option>
             </select>
@@ -181,7 +171,6 @@
             <select id="sortBy">
               <option value="created">Date Created</option>
               <option value="dueDate">Due Date</option>
-              <option value="priority">Priority</option>
               <option value="name">Name</option>
             </select>
           </div>
@@ -247,6 +236,149 @@
           <div class="week-grid" id="weekGrid"></div>
         </div>
       </div>
+
+      <!-- Gym View -->
+      <div class="view" id="gymView">
+        <!-- Date Navigation -->
+        <div class="gym-date-bar">
+          <button class="gym-date-nav" id="gymPrevDay">&lt;</button>
+          <button class="gym-date-today" id="gymToday">Today</button>
+          <button class="gym-date-nav" id="gymNextDay">&gt;</button>
+          <span class="gym-date-label" id="gymDateLabel"></span>
+          <input type="date" id="gymDate" class="gym-date-input">
+        </div>
+
+        <!-- Stats Row -->
+        <div class="gym-stats" id="gymStats"></div>
+
+        <!-- Workout Log -->
+        <div class="gym-workout" id="gymTodayList">
+          <div class="empty-state"><p>No exercises logged yet</p></div>
+        </div>
+
+        <!-- Add Exercise -->
+        <div class="gym-add-bar">
+          <input type="text" id="gymExerciseName" placeholder="Add exercise..." class="gym-exercise-input" list="exerciseSuggestions" autocomplete="off">
+          <datalist id="exerciseSuggestions"></datalist>
+          <div class="gym-sets-inline" id="gymSetsList"></div>
+          <div class="gym-add-actions">
+            <button type="button" class="gym-add-set-btn" id="gymAddSetBtn">+ Set</button>
+            <button type="button" class="btn-primary gym-save-btn" id="gymSaveExerciseBtn">Add Exercise</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diet View -->
+      <div class="view" id="dietView">
+        <!-- Diet Date Navigation -->
+        <div class="diet-date-bar">
+          <button class="gym-date-nav" id="dietPrevDay">&lt;</button>
+          <button class="gym-date-today" id="dietToday">Today</button>
+          <button class="gym-date-nav" id="dietNextDay">&gt;</button>
+          <span class="diet-date-label" id="dietDateLabel"></span>
+          <input type="date" id="dietDate" class="gym-date-input">
+        </div>
+        <div class="diet-layout">
+          <!-- Log Food Panel -->
+          <div class="card diet-log-card">
+            <h2>Log Food</h2>
+            <div class="diet-food-form">
+              <div class="diet-search-wrapper">
+                <input type="text" id="dietFoodName" placeholder="Search food (e.g. chicken breast, banana)..." class="diet-food-input" autocomplete="off">
+                <div class="diet-search-dropdown" id="dietSearchDropdown"></div>
+              </div>
+              <div class="diet-serving-info" id="dietServingInfo"></div>
+              <div class="diet-portion-row">
+                <div class="form-group">
+                  <label>Servings</label>
+                  <input type="number" id="dietServings" value="1" min="0.5" step="0.5">
+                </div>
+                <div class="form-group">
+                  <label>Meal</label>
+                  <select id="dietMeal">
+                    <option value="breakfast">Breakfast</option>
+                    <option value="lunch">Lunch</option>
+                    <option value="dinner">Dinner</option>
+                    <option value="snack">Snack</option>
+                  </select>
+                </div>
+              </div>
+              <div class="diet-macro-inputs">
+                <div class="form-group">
+                  <label>Calories</label>
+                  <input type="number" id="dietCalories" placeholder="kcal" min="0">
+                </div>
+                <div class="form-group">
+                  <label>Protein (g)</label>
+                  <input type="number" id="dietProtein" placeholder="g" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                  <label>Carbs (g)</label>
+                  <input type="number" id="dietCarbs" placeholder="g" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                  <label>Fat (g)</label>
+                  <input type="number" id="dietFat" placeholder="g" min="0" step="0.1">
+                </div>
+              </div>
+              <div class="diet-btn-row">
+                <button type="button" class="btn-primary diet-save-btn" id="dietSaveBtn">+ Add Food</button>
+                <button type="button" class="diet-save-custom-btn" id="dietSaveCustomBtn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+                  Save as My Food
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Daily Summary -->
+          <div class="card diet-summary-card">
+            <div class="diet-summary-header">
+              <h2 id="dietSummaryTitle">Today's Nutrition</h2>
+            </div>
+            <!-- Goal Progress -->
+            <div class="diet-goals" id="dietGoals"></div>
+            <!-- Food Recommendations -->
+            <div class="diet-recs" id="dietRecs"></div>
+            <!-- Water Tracker -->
+            <div class="water-tracker" id="waterTracker">
+              <div class="water-header">
+                <div class="water-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
+                  Water
+                </div>
+                <span class="water-progress" id="waterProgress">0 / 66 oz</span>
+              </div>
+              <div class="water-bar-track">
+                <div class="water-bar-fill" id="waterBarFill" style="width:0%"></div>
+              </div>
+              <div class="water-btns">
+                <button class="water-btn" data-oz="8">+8 oz</button>
+                <button class="water-btn" data-oz="12">+12 oz</button>
+                <button class="water-btn" data-oz="16">+16 oz</button>
+                <button class="water-btn" data-oz="20">+20 oz</button>
+                <button class="water-btn" data-oz="40">+40 oz</button>
+                <button class="water-btn water-btn-custom" id="waterCustomBtn">Custom</button>
+                <button class="water-btn water-btn-undo" id="waterUndoBtn">Undo</button>
+              </div>
+              <div class="water-log" id="waterLog"></div>
+            </div>
+            <div class="diet-meals-list" id="dietMealsList"></div>
+          </div>
+
+          <!-- My Foods + Diet History -->
+          <div class="card diet-history-card">
+            <h2>My Foods</h2>
+            <div class="diet-custom-list" id="dietCustomList">
+              <div class="empty-state"><p>No custom foods saved</p></div>
+            </div>
+            <h2 class="diet-history-title">Diet History</h2>
+            <div class="diet-history-list" id="dietHistoryList">
+              <div class="empty-state"><p>No diet history</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -292,14 +424,6 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Priority</label>
-              <select id="taskPriority">
-                <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-            <div class="form-group">
               <label>Status</label>
               <select id="taskStatus">
                 <option value="todo">To Do</option>
@@ -316,6 +440,12 @@
             <div class="form-group">
               <label>Due Date</label>
               <input type="date" id="taskDueDate">
+            </div>
+          </div>
+          <div class="form-row form-row-project" id="projectRow" style="display:none">
+            <div class="form-group">
+              <label>Project</label>
+              <select id="taskProject"><option value="">No Project</option></select>
             </div>
           </div>
         </div>
@@ -379,6 +509,15 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/tasks.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/gym.js"></script>
+  <script src="js/diet.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
