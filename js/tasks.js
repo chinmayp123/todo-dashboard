@@ -1,21 +1,45 @@
 // ========== Tasks List View ==========
+const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
+function isArchived(t) {
+  if (t.status !== 'done' || !t.completedAt) return false;
+  const completed = new Date(t.completedAt + 'T00:00:00');
+  return (Date.now() - completed.getTime()) >= TWO_WEEKS_MS;
+}
+
 function renderTasksView() {
-  let tasks = [...state.tasks];
+  const today = new Date().toISOString().split('T')[0];
   const search = $('#searchInput').value.toLowerCase();
   const statusF = $('#filterStatus').value;
   const categoryF = $('#filterCategory').value;
   const sortBy = $('#sortBy').value;
 
+  // Separate archived from active
+  let activeTasks = [];
+  let archivedTasks = [];
+  state.tasks.forEach(t => {
+    if (isArchived(t)) archivedTasks.push(t);
+    else activeTasks.push(t);
+  });
+
+  // Choose which list based on filter
+  let tasks = statusF === 'archived' ? [...archivedTasks] : [...activeTasks];
+
   if (search) tasks = tasks.filter(t => t.name.toLowerCase().includes(search) || (t.description && t.description.toLowerCase().includes(search)));
-  if (statusF !== 'all') tasks = tasks.filter(t => t.status === statusF);
+  if (statusF !== 'all' && statusF !== 'archived') tasks = tasks.filter(t => t.status === statusF);
   if (categoryF !== 'all') tasks = tasks.filter(t => t.category === categoryF);
   if (activeProject) tasks = tasks.filter(t => t.project === activeProject);
 
-  // Always sort uncompleted first, then by selected sort
+  // Sort: uncompleted first, recently completed on top of done, then by selected sort
   tasks.sort((a, b) => {
     const aDone = a.status === 'done' ? 1 : 0;
     const bDone = b.status === 'done' ? 1 : 0;
     if (aDone !== bDone) return aDone - bDone;
+
+    // Among done tasks, most recently completed first
+    if (a.status === 'done' && b.status === 'done') {
+      return (b.completedAt || '').localeCompare(a.completedAt || '');
+    }
 
     switch (sortBy) {
       case 'created': return b.created.localeCompare(a.created);
@@ -25,33 +49,67 @@ function renderTasksView() {
     }
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  $('#tasksList').innerHTML = tasks.length ? tasks.map(t => renderTaskRow(t, today)).join('')
+    : `<div class="empty-state"><p>${statusF === 'archived' ? 'No archived tasks' : 'No tasks match your filters'}</p></div>`;
 
-  $('#tasksList').innerHTML = tasks.length ? tasks.map(t => {
-    const cat = state.categories.find(c => c.id === t.category);
-    const proj = t.project ? state.projects.find(p => p.id === t.project) : null;
-    const isOverdue = t.dueDate && t.dueDate < today && t.status !== 'done';
-    const subtaskInfo = t.subtasks.length ? `${t.subtasks.filter(s => s.done).length}/${t.subtasks.length}` : '';
-    return `
-      <div class="task-row ${t.status === 'done' ? 'task-row-done' : ''}" data-id="${t.id}">
-        <div class="task-check ${t.status === 'done' ? 'checked' : ''}" data-id="${t.id}"></div>
-        <div class="task-row-info">
-          <div class="task-row-name ${t.status === 'done' ? 'completed' : ''}">${esc(t.name)}</div>
-          <div class="task-row-meta">
-            ${cat ? `<span class="task-row-category"><span class="category-dot" style="background:${cat.color}"></span>${cat.name}</span>` : ''}
-            ${proj ? `<span class="task-row-project" style="color:${proj.color}">${proj.name}</span>` : ''}
-            ${t.dueDate ? `<span class="task-due ${isOverdue ? 'overdue' : ''}">${isOverdue ? 'Overdue: ' : ''}${formatDate(t.dueDate)}</span>` : ''}
-            ${subtaskInfo ? `<span>Subtasks: ${subtaskInfo}</span>` : ''}
-          </div>
+  bindTaskRowEvents('#tasksList');
+
+  // Archived section (only show when not filtering by archived)
+  const archivedSection = $('#tasksArchivedSection');
+  if (statusF === 'archived' || !archivedTasks.length) {
+    archivedSection.innerHTML = '';
+  } else {
+    archivedSection.innerHTML = `
+      <div class="archived-toggle" id="archivedToggle">
+        <svg class="archived-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Archived</span>
+        <span class="archived-count">${archivedTasks.length}</span>
+      </div>
+      <div class="archived-list" id="archivedList">
+        ${archivedTasks.sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || '')).map(t => renderTaskRow(t, today)).join('')}
+      </div>
+    `;
+
+    $('#archivedToggle').addEventListener('click', () => {
+      archivedSection.classList.toggle('open');
+    });
+
+    bindTaskRowEvents('#archivedList');
+  }
+}
+
+function renderTaskRow(t, today) {
+  const cat = state.categories.find(c => c.id === t.category);
+  const proj = t.project ? state.projects.find(p => p.id === t.project) : null;
+  const isOverdue = t.dueDate && t.dueDate < today && t.status !== 'done';
+  const subtaskInfo = t.subtasks.length ? `${t.subtasks.filter(s => s.done).length}/${t.subtasks.length}` : '';
+  const createdStr = t.created ? formatDate(t.created) : '';
+  const completedStr = t.status === 'done' && t.completedAt ? formatDate(t.completedAt) : '';
+  return `
+    <div class="task-row ${t.status === 'done' ? 'task-row-done' : ''}" data-id="${t.id}">
+      <div class="task-check ${t.status === 'done' ? 'checked' : ''}" data-id="${t.id}"></div>
+      <div class="task-row-info">
+        <div class="task-row-name ${t.status === 'done' ? 'completed' : ''}">${esc(t.name)}</div>
+        <div class="task-row-meta">
+          ${cat ? `<span class="task-row-category"><span class="category-dot" style="background:${cat.color}"></span>${cat.name}</span>` : ''}
+          ${proj ? `<span class="task-row-project" style="color:${proj.color}">${proj.name}</span>` : ''}
+          ${t.dueDate ? `<span class="task-due ${isOverdue ? 'overdue' : ''}">${isOverdue ? 'Overdue: ' : ''}${formatDate(t.dueDate)}</span>` : ''}
+          ${subtaskInfo ? `<span>Subtasks: ${subtaskInfo}</span>` : ''}
+          ${createdStr ? `<span class="task-created">Created ${createdStr}</span>` : ''}
+          ${completedStr ? `<span class="task-completed-date">Done ${completedStr}</span>` : ''}
         </div>
-        <span class="status-badge ${t.status}">${t.status.replace('-', ' ')}</span>
-      </div>`;
-  }).join('') : '<div class="empty-state"><p>No tasks match your filters</p></div>';
+      </div>
+      <span class="status-badge ${t.status}">${t.status.replace('-', ' ')}</span>
+    </div>`;
+}
 
-  $$('#tasksList .task-check').forEach(el => {
+function bindTaskRowEvents(containerSel) {
+  $$(`${containerSel} .task-check`).forEach(el => {
     el.addEventListener('click', (e) => { e.stopPropagation(); toggleTaskDone(el.dataset.id); });
   });
-  $$('#tasksList .task-row').forEach(el => {
+  $$(`${containerSel} .task-row`).forEach(el => {
     el.addEventListener('click', () => openModal(el.dataset.id));
   });
 }

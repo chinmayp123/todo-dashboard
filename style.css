@@ -1266,6 +1266,76 @@ body {
   opacity: 0.5;
 }
 
+.task-created {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.task-completed-date {
+  color: var(--green);
+  font-weight: 500;
+}
+
+/* Archived Section */
+.tasks-archived-section {
+  margin-top: 16px;
+}
+
+.archived-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+
+.archived-toggle:hover { background: var(--bg-hover); }
+
+.archived-chevron {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tasks-archived-section.open .archived-chevron {
+  transform: rotate(90deg);
+}
+
+.archived-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.archived-list {
+  display: none;
+  margin-top: 8px;
+}
+
+.tasks-archived-section.open .archived-list {
+  display: block;
+}
+
+.archived-list .task-row {
+  opacity: 0.4;
+}
+
+.archived-list .task-row:hover {
+  opacity: 0.7;
+}
+
 .task-due {
   font-size: 12px;
   color: var(--text-muted);

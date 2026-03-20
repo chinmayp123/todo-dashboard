@@ -25,9 +25,12 @@ function renderDashboard() {
   $('#deadlinesList').innerHTML = upcoming.length ? upcoming.map(t => {
     const isOverdue = t.dueDate < today;
     const dateStr = formatDate(t.dueDate);
+    const proj = t.project ? state.projects.find(p => p.id === t.project) : null;
+    const cat = state.categories.find(c => c.id === t.category);
+    const itemColor = proj ? proj.color : (cat ? cat.color : null);
     return `
       <div class="deadline-item">
-        <span class="deadline-date ${isOverdue ? 'overdue' : ''}">${dateStr}</span>
+        <span class="deadline-date ${isOverdue ? 'overdue' : ''}" ${!isOverdue && itemColor ? `style="color:${itemColor}"` : ''}>${dateStr}</span>
         <span class="deadline-name">${esc(t.name)}</span>
       </div>`;
   }).join('') : '<div class="empty-state"><p>No upcoming deadlines</p></div>';
