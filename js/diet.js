@@ -102,6 +102,37 @@ const FOOD_DATABASE = {
   'celery': { calories: 6, protein: 0.3, carbs: 1.2, fat: 0.1, serving: '1 stalk', fiber: 0.6, sugar: 0.5 },
   'edamame': { calories: 188, protein: 18, carbs: 14, fat: 8, serving: '1 cup shelled', fiber: 8, sugar: 3.4 },
   'salad': { calories: 20, protein: 1.5, carbs: 3.5, fat: 0.2, serving: '2 cups mixed greens', fiber: 2, sugar: 1 },
+  'beetroot': { calories: 43, protein: 1.6, carbs: 10, fat: 0.2, serving: '1 medium (82g)', fiber: 2, sugar: 6.8 },
+  'beet root': { calories: 43, protein: 1.6, carbs: 10, fat: 0.2, serving: '1 medium (82g)', fiber: 2, sugar: 6.8 },
+  'beets': { calories: 43, protein: 1.6, carbs: 10, fat: 0.2, serving: '1 medium (82g)', fiber: 2, sugar: 6.8 },
+  'radish': { calories: 19, protein: 0.8, carbs: 4, fat: 0.1, serving: '1 cup sliced', fiber: 1.9, sugar: 2.2 },
+  'turnip': { calories: 36, protein: 1.2, carbs: 8, fat: 0.1, serving: '1 medium (122g)', fiber: 2.3, sugar: 4.9 },
+  'parsnip': { calories: 100, protein: 1.6, carbs: 24, fat: 0.4, serving: '1 medium (133g)', fiber: 6.5, sugar: 6.4 },
+  'eggplant': { calories: 20, protein: 0.8, carbs: 5, fat: 0.2, serving: '1 cup cubed', fiber: 2.5, sugar: 2.9 },
+  'artichoke': { calories: 60, protein: 3.5, carbs: 13, fat: 0.2, serving: '1 medium', fiber: 6.9, sugar: 1.3 },
+  'okra': { calories: 33, protein: 1.9, carbs: 7, fat: 0.2, serving: '1 cup', fiber: 3.2, sugar: 1.5 },
+  'arugula': { calories: 5, protein: 0.5, carbs: 0.7, fat: 0.1, serving: '1 cup', fiber: 0.3, sugar: 0.4 },
+  'bok choy': { calories: 9, protein: 1, carbs: 1.5, fat: 0.1, serving: '1 cup shredded', fiber: 0.7, sugar: 0.8 },
+  'collard greens': { calories: 12, protein: 1, carbs: 2, fat: 0.2, serving: '1 cup', fiber: 1.4, sugar: 0.2 },
+  'swiss chard': { calories: 7, protein: 0.6, carbs: 1.4, fat: 0.1, serving: '1 cup', fiber: 0.6, sugar: 0.4 },
+  'watercress': { calories: 4, protein: 0.8, carbs: 0.4, fat: 0, serving: '1 cup', fiber: 0.2, sugar: 0.1 },
+  'jalapeno': { calories: 4, protein: 0.1, carbs: 0.9, fat: 0, serving: '1 pepper', fiber: 0.4, sugar: 0.6 },
+  'garlic': { calories: 4, protein: 0.2, carbs: 1, fat: 0, serving: '1 clove', fiber: 0.1, sugar: 0 },
+  'ginger': { calories: 2, protein: 0, carbs: 0.4, fat: 0, serving: '1 tsp grated', fiber: 0.1, sugar: 0 },
+  'snap peas': { calories: 41, protein: 2.7, carbs: 7.4, fat: 0.2, serving: '1 cup', fiber: 2.6, sugar: 4 },
+  'butternut squash': { calories: 63, protein: 1.4, carbs: 16, fat: 0.1, serving: '1 cup cubed', fiber: 2.8, sugar: 3 },
+  'acorn squash': { calories: 56, protein: 1.1, carbs: 15, fat: 0.1, serving: '1 cup cubed', fiber: 2.1, sugar: 0 },
+  'spaghetti squash': { calories: 42, protein: 1, carbs: 10, fat: 0.4, serving: '1 cup', fiber: 2.2, sugar: 3.9 },
+  'leek': { calories: 54, protein: 1.3, carbs: 13, fat: 0.3, serving: '1 medium', fiber: 1.6, sugar: 3.5 },
+  'green onion': { calories: 5, protein: 0.3, carbs: 1.1, fat: 0, serving: '1 stalk', fiber: 0.4, sugar: 0.4 },
+  'fennel': { calories: 27, protein: 1, carbs: 6, fat: 0.2, serving: '1 cup sliced', fiber: 2.7, sugar: 3.4 },
+  'jicama': { calories: 46, protein: 0.9, carbs: 11, fat: 0.1, serving: '1 cup', fiber: 5.9, sugar: 2.2 },
+  'daikon': { calories: 18, protein: 0.6, carbs: 4, fat: 0.1, serving: '1 cup', fiber: 1.6, sugar: 2.5 },
+  'bamboo shoots': { calories: 41, protein: 3.9, carbs: 7.9, fat: 0.5, serving: '1 cup', fiber: 3.3, sugar: 4.5 },
+  'water chestnuts': { calories: 60, protein: 0.9, carbs: 15, fat: 0.1, serving: '1/2 cup sliced', fiber: 1.8, sugar: 3 },
+  'taro': { calories: 187, protein: 0.7, carbs: 46, fat: 0.1, serving: '1 cup', fiber: 6.7, sugar: 0.7 },
+  'yam': { calories: 158, protein: 2, carbs: 38, fat: 0.2, serving: '1 cup cubed', fiber: 5.3, sugar: 0.7 },
+  'plantain': { calories: 181, protein: 1.9, carbs: 47, fat: 0.5, serving: '1 medium', fiber: 3.4, sugar: 22 },
 
   // Fruits
   'banana': { calories: 105, protein: 1.3, carbs: 27, fat: 0.4, serving: '1 medium (118g)', fiber: 3.1, sugar: 14 },
@@ -185,6 +216,87 @@ const FOOD_DATABASE = {
   'soup': { calories: 100, protein: 5, carbs: 15, fat: 2, serving: '1 cup', fiber: 2, sugar: 3 },
   'chicken soup': { calories: 75, protein: 4, carbs: 9, fat: 2.5, serving: '1 cup', fiber: 1, sugar: 1 },
   'chili': { calories: 247, protein: 16, carbs: 22, fat: 11, serving: '1 cup', fiber: 5, sugar: 4 },
+  'hot dog': { calories: 290, protein: 11, carbs: 24, fat: 17, serving: '1 hot dog with bun', fiber: 1, sugar: 4 },
+  'corn dog': { calories: 330, protein: 10, carbs: 34, fat: 17, serving: '1 corn dog', fiber: 1, sugar: 7 },
+  'quesadilla': { calories: 475, protein: 22, carbs: 37, fat: 26, serving: '1 quesadilla', fiber: 2, sugar: 2 },
+  'nachos': { calories: 346, protein: 9, carbs: 36, fat: 19, serving: '6-8 chips with cheese', fiber: 3, sugar: 2 },
+
+  // McDonald's
+  'big mac': { calories: 550, protein: 25, carbs: 45, fat: 30, serving: '1 burger', fiber: 3, sugar: 9 },
+  'mcchicken': { calories: 400, protein: 14, carbs: 40, fat: 21, serving: '1 sandwich', fiber: 2, sugar: 5 },
+  'mcdouble': { calories: 400, protein: 22, carbs: 33, fat: 20, serving: '1 burger', fiber: 2, sugar: 7 },
+  'quarter pounder': { calories: 520, protein: 30, carbs: 42, fat: 26, serving: '1 burger', fiber: 2, sugar: 10 },
+  'mcnuggets': { calories: 170, protein: 10, carbs: 10, fat: 10, serving: '4 piece', fiber: 0.5, sugar: 0 },
+  'mcnuggets 10pc': { calories: 410, protein: 24, carbs: 25, fat: 24, serving: '10 piece', fiber: 1, sugar: 0 },
+  'egg mcmuffin': { calories: 300, protein: 17, carbs: 30, fat: 12, serving: '1 sandwich', fiber: 2, sugar: 3 },
+  'sausage mcmuffin': { calories: 400, protein: 14, carbs: 29, fat: 26, serving: '1 sandwich', fiber: 2, sugar: 2 },
+  'mcdonald fries': { calories: 320, protein: 3, carbs: 43, fat: 15, serving: 'medium', fiber: 4, sugar: 0 },
+  'filet-o-fish': { calories: 390, protein: 16, carbs: 39, fat: 19, serving: '1 sandwich', fiber: 2, sugar: 5 },
+  'mcflurry': { calories: 510, protein: 13, carbs: 73, fat: 18, serving: 'regular oreo', fiber: 1, sugar: 57 },
+
+  // Chick-fil-A
+  'chick-fil-a sandwich': { calories: 440, protein: 28, carbs: 40, fat: 19, serving: '1 sandwich', fiber: 2, sugar: 6 },
+  'chick-fil-a spicy sandwich': { calories: 450, protein: 28, carbs: 41, fat: 19, serving: '1 sandwich', fiber: 2, sugar: 6 },
+  'chick-fil-a nuggets': { calories: 250, protein: 27, carbs: 11, fat: 11, serving: '8 count', fiber: 0.5, sugar: 1 },
+  'chick-fil-a nuggets 12': { calories: 380, protein: 40, carbs: 16, fat: 17, serving: '12 count', fiber: 1, sugar: 1 },
+  'chick-fil-a waffle fries': { calories: 360, protein: 4, carbs: 43, fat: 19, serving: 'medium', fiber: 5, sugar: 0 },
+  'chick-fil-a milkshake': { calories: 580, protein: 13, carbs: 82, fat: 22, serving: 'small cookies & cream', fiber: 1, sugar: 71 },
+
+  // Wendy's
+  'wendys baconator': { calories: 940, protein: 57, carbs: 38, fat: 62, serving: '1 burger', fiber: 2, sugar: 8 },
+  'wendys dave single': { calories: 570, protein: 30, carbs: 39, fat: 34, serving: '1 burger', fiber: 2, sugar: 8 },
+  'wendys spicy chicken': { calories: 470, protein: 27, carbs: 44, fat: 21, serving: '1 sandwich', fiber: 2, sugar: 5 },
+  'wendys nuggets': { calories: 170, protein: 10, carbs: 10, fat: 11, serving: '4 piece', fiber: 0, sugar: 0 },
+  'wendys frosty': { calories: 340, protein: 9, carbs: 56, fat: 9, serving: 'small chocolate', fiber: 0, sugar: 47 },
+
+  // Taco Bell
+  'crunchwrap supreme': { calories: 530, protein: 16, carbs: 71, fat: 21, serving: '1 crunchwrap', fiber: 4, sugar: 6 },
+  'chalupa': { calories: 350, protein: 12, carbs: 30, fat: 21, serving: '1 chalupa supreme', fiber: 3, sugar: 3 },
+  'cheesy gordita crunch': { calories: 500, protein: 20, carbs: 41, fat: 28, serving: '1 item', fiber: 3, sugar: 4 },
+  'mexican pizza': { calories: 540, protein: 20, carbs: 46, fat: 31, serving: '1 pizza', fiber: 7, sugar: 3 },
+  'taco bell taco': { calories: 170, protein: 8, carbs: 13, fat: 9, serving: '1 crunchy taco', fiber: 2, sugar: 1 },
+  'bean burrito': { calories: 380, protein: 14, carbs: 55, fat: 11, serving: '1 burrito', fiber: 8, sugar: 3 },
+  'quesarito': { calories: 650, protein: 27, carbs: 64, fat: 33, serving: '1 quesarito', fiber: 6, sugar: 4 },
+
+  // Subway
+  'subway turkey': { calories: 280, protein: 18, carbs: 39, fat: 3.5, serving: '6 inch', fiber: 3, sugar: 6 },
+  'subway italian bmt': { calories: 410, protein: 20, carbs: 41, fat: 18, serving: '6 inch', fiber: 3, sugar: 7 },
+  'subway meatball': { calories: 480, protein: 22, carbs: 51, fat: 20, serving: '6 inch', fiber: 4, sugar: 10 },
+  'subway chicken teriyaki': { calories: 340, protein: 26, carbs: 45, fat: 5, serving: '6 inch', fiber: 3, sugar: 12 },
+  'subway steak and cheese': { calories: 390, protein: 26, carbs: 40, fat: 12, serving: '6 inch', fiber: 3, sugar: 7 },
+
+  // Chipotle
+  'chipotle burrito bowl': { calories: 665, protein: 36, carbs: 74, fat: 22, serving: 'chicken bowl', fiber: 11, sugar: 4 },
+  'chipotle burrito': { calories: 955, protein: 39, carbs: 108, fat: 36, serving: 'chicken burrito', fiber: 13, sugar: 5 },
+  'chipotle tacos': { calories: 560, protein: 32, carbs: 38, fat: 28, serving: '3 chicken tacos', fiber: 5, sugar: 3 },
+  'chipotle chips': { calories: 540, protein: 7, carbs: 68, fat: 26, serving: 'chips & guac', fiber: 7, sugar: 2 },
+
+  // Popeyes
+  'popeyes chicken sandwich': { calories: 700, protein: 28, carbs: 50, fat: 42, serving: '1 sandwich', fiber: 2, sugar: 8 },
+  'popeyes tender': { calories: 150, protein: 8, carbs: 8, fat: 9, serving: '1 tender', fiber: 0.5, sugar: 0 },
+
+  // Five Guys
+  'five guys burger': { calories: 840, protein: 43, carbs: 40, fat: 55, serving: '1 cheeseburger', fiber: 2, sugar: 9 },
+  'five guys little burger': { calories: 550, protein: 27, carbs: 39, fat: 32, serving: '1 little cheeseburger', fiber: 2, sugar: 8 },
+  'five guys fries': { calories: 530, protein: 8, carbs: 60, fat: 30, serving: 'regular', fiber: 6, sugar: 1 },
+
+  // Panda Express
+  'orange chicken': { calories: 490, protein: 25, carbs: 51, fat: 21, serving: '1 entree', fiber: 0, sugar: 19 },
+  'beijing beef': { calories: 470, protein: 14, carbs: 57, fat: 22, serving: '1 entree', fiber: 2, sugar: 25 },
+  'broccoli beef': { calories: 150, protein: 9, carbs: 13, fat: 7, serving: '1 entree', fiber: 2, sugar: 5 },
+  'chow mein': { calories: 510, protein: 13, carbs: 80, fat: 16, serving: '1 side', fiber: 6, sugar: 9 },
+  'fried rice': { calories: 520, protein: 11, carbs: 85, fat: 16, serving: '1 side panda express', fiber: 2, sugar: 3 },
+
+  // Pizza (specific)
+  'dominos cheese pizza': { calories: 200, protein: 8, carbs: 25, fat: 8, serving: '1 medium slice', fiber: 1, sugar: 3 },
+  'dominos pepperoni': { calories: 220, protein: 9, carbs: 25, fat: 9, serving: '1 medium slice', fiber: 1, sugar: 3 },
+  'pizza hut cheese': { calories: 220, protein: 9, carbs: 26, fat: 9, serving: '1 medium slice', fiber: 1, sugar: 3 },
+  'little caesars': { calories: 220, protein: 9, carbs: 26, fat: 9, serving: '1 medium slice', fiber: 1, sugar: 3 },
+
+  // KFC
+  'kfc original chicken': { calories: 390, protein: 39, carbs: 11, fat: 21, serving: '1 breast', fiber: 0.5, sugar: 0 },
+  'kfc extra crispy': { calories: 490, protein: 34, carbs: 17, fat: 32, serving: '1 breast', fiber: 1, sugar: 0 },
+  'kfc mashed potatoes': { calories: 120, protein: 2, carbs: 17, fat: 5, serving: 'individual', fiber: 1, sugar: 0 },
 
   // Snacks & Sweets
   'ice cream': { calories: 207, protein: 3.5, carbs: 24, fat: 11, serving: '1/2 cup', fiber: 0.5, sugar: 21 },
@@ -212,6 +324,41 @@ const FOOD_DATABASE = {
   'rice cake': { calories: 35, protein: 0.7, carbs: 7.3, fat: 0.3, serving: '1 cake', fiber: 0.4, sugar: 0 },
   'granola bar': { calories: 140, protein: 3, carbs: 22, fat: 5, serving: '1 bar', fiber: 2, sugar: 10 },
   'candy bar': { calories: 250, protein: 4, carbs: 33, fat: 12, serving: '1 bar (50g)', fiber: 1, sugar: 25 },
+  'cheez-its': { calories: 150, protein: 3, carbs: 17, fat: 8, serving: '1 oz (27 crackers)', fiber: 0.5, sugar: 0.5 },
+  'cheez-it': { calories: 150, protein: 3, carbs: 17, fat: 8, serving: '1 oz (27 crackers)', fiber: 0.5, sugar: 0.5 },
+  'goldfish': { calories: 140, protein: 4, carbs: 20, fat: 5, serving: '1 oz (55 pieces)', fiber: 0.5, sugar: 1 },
+  'uncrustables': { calories: 210, protein: 6, carbs: 26, fat: 9, serving: '1 sandwich', fiber: 2, sugar: 9 },
+  'chips ahoy': { calories: 160, protein: 1, carbs: 22, fat: 8, serving: '3 cookies (33g)', fiber: 0.5, sugar: 11 },
+  'oreos': { calories: 160, protein: 1, carbs: 25, fat: 7, serving: '3 cookies (34g)', fiber: 0.5, sugar: 14 },
+  'nutter butter': { calories: 130, protein: 2, carbs: 19, fat: 5, serving: '2 cookies (26g)', fiber: 0.5, sugar: 9 },
+  'fig newtons': { calories: 200, protein: 2, carbs: 40, fat: 4, serving: '2 cookies (56g)', fiber: 2, sugar: 24 },
+  'biscuits': { calories: 166, protein: 3.2, carbs: 22, fat: 7.5, serving: '1 biscuit (60g)', fiber: 0.7, sugar: 2.5 },
+  'ritz crackers': { calories: 80, protein: 1, carbs: 10, fat: 4, serving: '5 crackers (16g)', fiber: 0, sugar: 1 },
+  'triscuits': { calories: 120, protein: 3, carbs: 20, fat: 4.5, serving: '6 crackers (28g)', fiber: 3, sugar: 0 },
+  'wheat thins': { calories: 140, protein: 2, carbs: 22, fat: 5, serving: '16 crackers (31g)', fiber: 2, sugar: 5 },
+  'graham crackers': { calories: 130, protein: 2, carbs: 24, fat: 3, serving: '2 sheets (31g)', fiber: 1, sugar: 8 },
+  'animal crackers': { calories: 130, protein: 2, carbs: 22, fat: 4, serving: '16 crackers (30g)', fiber: 0.5, sugar: 7 },
+  'pop-tarts': { calories: 200, protein: 2, carbs: 38, fat: 5, serving: '1 pastry', fiber: 0.5, sugar: 17 },
+  'nutri-grain bar': { calories: 130, protein: 2, carbs: 26, fat: 3, serving: '1 bar (37g)', fiber: 3, sugar: 12 },
+  'nature valley bar': { calories: 190, protein: 4, carbs: 29, fat: 7, serving: '2 bars (42g)', fiber: 2, sugar: 11 },
+  'almonds': { calories: 164, protein: 6, carbs: 6, fat: 14, serving: '1 oz (23 almonds)', fiber: 3.5, sugar: 1.2 },
+  'cashews': { calories: 157, protein: 5, carbs: 9, fat: 12, serving: '1 oz (18 cashews)', fiber: 0.9, sugar: 1.7 },
+  'walnuts': { calories: 185, protein: 4.3, carbs: 4, fat: 18, serving: '1 oz (14 halves)', fiber: 1.9, sugar: 0.7 },
+  'pecans': { calories: 196, protein: 2.6, carbs: 4, fat: 20, serving: '1 oz (19 halves)', fiber: 2.7, sugar: 1.1 },
+  'peanuts': { calories: 161, protein: 7, carbs: 4.6, fat: 14, serving: '1 oz (28g)', fiber: 2.4, sugar: 1 },
+  'pistachios': { calories: 159, protein: 6, carbs: 8, fat: 13, serving: '1 oz (49 kernels)', fiber: 2.9, sugar: 2 },
+  'macadamia nuts': { calories: 204, protein: 2.2, carbs: 4, fat: 21, serving: '1 oz (10-12 nuts)', fiber: 2.4, sugar: 1.3 },
+  'mixed nuts': { calories: 172, protein: 5, carbs: 7, fat: 15, serving: '1 oz (28g)', fiber: 2, sugar: 1.5 },
+  'sunflower seeds': { calories: 165, protein: 5.5, carbs: 7, fat: 14, serving: '1 oz (28g)', fiber: 3.2, sugar: 0.8 },
+  'pumpkin seeds': { calories: 126, protein: 5.3, carbs: 15, fat: 5.5, serving: '1 oz (28g)', fiber: 5.2, sugar: 0.3 },
+  'beef jerky': { calories: 116, protein: 9.4, carbs: 3.1, fat: 7.3, serving: '1 oz (28g)', fiber: 0.4, sugar: 2.6 },
+  'string cheese': { calories: 80, protein: 7, carbs: 0.5, fat: 5, serving: '1 stick (28g)', fiber: 0, sugar: 0 },
+  'fruit snacks': { calories: 80, protein: 0, carbs: 20, fat: 0, serving: '1 pouch (25g)', fiber: 0, sugar: 11 },
+  'rice krispies treat': { calories: 90, protein: 1, carbs: 17, fat: 2.5, serving: '1 bar (22g)', fiber: 0, sugar: 8 },
+  'teddy grahams': { calories: 130, protein: 2, carbs: 22, fat: 4.5, serving: '24 pieces (30g)', fiber: 1, sugar: 8 },
+  'chex mix': { calories: 120, protein: 3, carbs: 19, fat: 4.5, serving: '2/3 cup (30g)', fiber: 1, sugar: 2 },
+  'cheese puffs': { calories: 160, protein: 2, carbs: 14, fat: 10, serving: '1 oz (28g)', fiber: 0.5, sugar: 1 },
+  'hot cheetos': { calories: 170, protein: 2, carbs: 15, fat: 11, serving: '1 oz (21 pieces)', fiber: 0.5, sugar: 1 },
 
   // Beverages
   'orange juice': { calories: 112, protein: 1.7, carbs: 26, fat: 0.5, serving: '1 cup', fiber: 0.5, sugar: 21 },
@@ -309,10 +456,10 @@ function renderDiet() {
 
   // Totals
   const totals = dayEntries.reduce((acc, e) => {
-    acc.calories += (e.calories || 0) * (e.servings || 1);
-    acc.protein += (e.protein || 0) * (e.servings || 1);
-    acc.carbs += (e.carbs || 0) * (e.servings || 1);
-    acc.fat += (e.fat || 0) * (e.servings || 1);
+    acc.calories += (e.calories || 0);
+    acc.protein += (e.protein || 0);
+    acc.carbs += (e.carbs || 0);
+    acc.fat += (e.fat || 0);
     return acc;
   }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
@@ -339,7 +486,7 @@ function renderDiet() {
     $('#dietMealsList').innerHTML = '<div class="empty-state"><p>No food logged</p></div>';
   } else {
     $('#dietMealsList').innerHTML = mealGroups.map(g => {
-      const mealCal = g.entries.reduce((s, e) => s + (e.calories || 0) * (e.servings || 1), 0);
+      const mealCal = g.entries.reduce((s, e) => s + (e.calories || 0), 0);
       return `
         <div class="diet-meal-group">
           <div class="diet-meal-header">
@@ -356,10 +503,10 @@ function renderDiet() {
                   <button class="diet-delete-food" data-diet-idx="${idx}">&times;</button>
                 </div>
                 <div class="diet-food-macros">
-                  <span>${Math.round((e.calories || 0) * (e.servings || 1))} cal</span>
-                  <span>${Math.round((e.protein || 0) * (e.servings || 1))}g P</span>
-                  <span>${Math.round((e.carbs || 0) * (e.servings || 1))}g C</span>
-                  <span>${Math.round((e.fat || 0) * (e.servings || 1))}g F</span>
+                  <span>${Math.round(e.calories || 0)} cal</span>
+                  <span>${Math.round(e.protein || 0)}g P</span>
+                  <span>${Math.round(e.carbs || 0)}g C</span>
+                  <span>${Math.round(e.fat || 0)}g F</span>
                 </div>
               </div>`;
           }).join('')}
@@ -422,10 +569,10 @@ function renderDiet() {
     $('#dietHistoryList').innerHTML = historyDays.map(day => {
       const entries = state.diet.filter(e => e.date === day);
       const dayTotals = entries.reduce((acc, e) => {
-        acc.calories += (e.calories || 0) * (e.servings || 1);
-        acc.protein += (e.protein || 0) * (e.servings || 1);
-        acc.carbs += (e.carbs || 0) * (e.servings || 1);
-        acc.fat += (e.fat || 0) * (e.servings || 1);
+        acc.calories += (e.calories || 0);
+        acc.protein += (e.protein || 0);
+        acc.carbs += (e.carbs || 0);
+        acc.fat += (e.fat || 0);
         return acc;
       }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
       return `
@@ -534,6 +681,9 @@ function fetchWithTimeout(url, ms = 5000) {
 
 async function lookupFoodAPI(query) {
   const dropdown = $('#dietSearchDropdown');
+  // Don't replace dropdown if user is hovering over it
+  const isHovered = dropdown.matches(':hover');
+  if (isHovered) return;
   dropdown.innerHTML = '<div class="diet-search-loading">Searching food databases...</div>';
   dropdown.classList.add('visible');
 
@@ -690,12 +840,14 @@ function bindDietEvents() {
       if (localResults.length <= 2) {
         dietSearchTimeout = setTimeout(() => {
           if (!dropdownHovered) lookupFoodAPI(query);
-        }, 1500);
+        }, 3000);
       }
     } else {
       dropdown.innerHTML = '<div class="diet-search-empty-hint">No local match. Searching online...</div>';
       dropdown.classList.add('visible');
-      dietSearchTimeout = setTimeout(() => lookupFoodAPI(query), 500);
+      dietSearchTimeout = setTimeout(() => {
+        if (!dropdownHovered) lookupFoodAPI(query);
+      }, 1500);
     }
 
     bindDropdownClicks(query);
@@ -734,10 +886,8 @@ function bindDietEvents() {
       return;
     }
 
-    // Only rebuild dropdown if mouse is NOT hovering over it
-    localSearchTimeout = setTimeout(() => {
-      if (!dropdownHovered) buildDropdown(query);
-    }, 600);
+    // Show local results immediately (no debounce) — only debounce API lookups
+    if (!dropdownHovered) buildDropdown(query);
   });
 
   // Close dropdown on click outside
@@ -764,6 +914,7 @@ function bindDietEvents() {
       meal: $('#dietMeal').value,
       food,
       servings: Number($('#dietServings').value) || 1,
+      // Macros already include servings multiplier from the input fields
       calories: Number($('#dietCalories').value) || 0,
       protein: Number($('#dietProtein').value) || 0,
       carbs: Number($('#dietCarbs').value) || 0,

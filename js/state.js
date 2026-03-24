@@ -30,6 +30,7 @@ function loadData() {
   const customFoods = localStorage.getItem('tf_custom_foods');
   const water = localStorage.getItem('tf_water');
   const projects = localStorage.getItem('tf_projects');
+  const events = localStorage.getItem('tf_events');
   return {
     tasks: tasks ? JSON.parse(tasks) : [...SAMPLE_TASKS],
     categories: categories ? JSON.parse(categories) : [...DEFAULT_CATEGORIES],
@@ -38,6 +39,7 @@ function loadData() {
     diet: dietLog ? JSON.parse(dietLog) : [],
     customFoods: customFoods ? JSON.parse(customFoods) : {},
     water: water ? JSON.parse(water) : {},
+    events: events ? JSON.parse(events) : [],
   };
 }
 
@@ -49,6 +51,7 @@ function saveData(data) {
   localStorage.setItem('tf_custom_foods', JSON.stringify(data.customFoods));
   localStorage.setItem('tf_water', JSON.stringify(data.water));
   localStorage.setItem('tf_projects', JSON.stringify(data.projects));
+  localStorage.setItem('tf_events', JSON.stringify(data.events));
 }
 
 // ========== State ==========

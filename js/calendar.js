@@ -35,11 +35,15 @@ function renderCalendarMonth() {
     const isToday = dateStr === today;
     const holiday = holidays.find(h => h.date === dateStr);
     const dayTasks = state.tasks.filter(t => t.dueDate === dateStr);
+    const dayEvents = (state.events || []).filter(e => e.date === dateStr);
     const holidayHtml = holiday ? `<div class="cal-holiday">${esc(holiday.name)}</div>` : '';
+    const eventDots = dayEvents.map(e =>
+      `<div class="cal-event-dot" style="border-left-color:${e.color || 'var(--accent)'}" data-event-id="${e.id}" title="${esc(e.name)}">${esc(e.name)}</div>`
+    ).join('');
     const taskDots = dayTasks.slice(0, 3).map(t =>
       `<div class="cal-task-dot ${t.priority}" data-id="${t.id}" title="${esc(t.name)}">${esc(t.name)}</div>`
     ).join('');
-    html += `<div class="cal-day${isToday ? ' today' : ''}${holiday ? ' holiday' : ''}"><span class="cal-day-number">${d}</span>${holidayHtml}${taskDots}</div>`;
+    html += `<div class="cal-day${isToday ? ' today' : ''}${holiday ? ' holiday' : ''}" data-date="${dateStr}"><span class="cal-day-number">${d}</span>${holidayHtml}${eventDots}${taskDots}</div>`;
   }
 
   const totalCells = firstDay + daysInMonth;
@@ -51,7 +55,25 @@ function renderCalendarMonth() {
   $('#calendarDays').innerHTML = html;
 
   $$('.cal-task-dot').forEach(el => {
-    el.addEventListener('click', () => openModal(el.dataset.id));
+    el.addEventListener('click', (e) => { e.stopPropagation(); openModal(el.dataset.id); });
+  });
+
+  // Click day to add custom event
+  $$('.cal-day:not(.other-month)').forEach(cell => {
+    cell.addEventListener('dblclick', () => {
+      const date = cell.dataset.date;
+      if (!date) return;
+      openEventModal(date);
+    });
+  });
+
+  // Click event to edit/delete
+  $$('.cal-event-dot').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ev = (state.events || []).find(ev => ev.id === el.dataset.eventId);
+      if (ev) openEventModal(ev.date, ev);
+    });
   });
 }
 
@@ -88,17 +110,19 @@ function renderCalendarWeek() {
     const isToday = dateStr === today;
     const holiday = holidays.find(h => h.date === dateStr);
     const dayTasks = state.tasks.filter(t => t.dueDate === dateStr);
+    const dayEvents = (state.events || []).filter(e => e.date === dateStr);
 
     const scheduled = dayTasks.filter(t => t.scheduledHour != null).sort((a, b) => a.scheduledHour - b.scheduledHour);
     const unscheduled = dayTasks.filter(t => t.scheduledHour == null);
 
     html += `
-      <div class="week-col${isToday ? ' today' : ''}">
+      <div class="week-col${isToday ? ' today' : ''}" data-date="${dateStr}">
         <div class="week-col-header">
           <span class="week-col-day">${dayNames[i]}</span>
           <span class="week-col-num${isToday ? ' today' : ''}">${colDate.getDate()}</span>
         </div>
         ${holiday ? `<div class="cal-holiday">${esc(holiday.name)}</div>` : ''}
+        ${dayEvents.map(e => `<div class="cal-event-dot week-event" style="border-left-color:${e.color || 'var(--accent)'}" data-event-id="${e.id}">${esc(e.name)}${e.time ? ` <span class="week-event-time">${e.time}</span>` : ''}</div>`).join('')}
         <div class="week-col-tasks">
           ${scheduled.map(t => {
             const cat = state.categories.find(c => c.id === t.category);
@@ -133,4 +157,127 @@ function renderCalendarWeek() {
   $$('.week-task').forEach(el => {
     el.addEventListener('click', () => openModal(el.dataset.id));
   });
+
+  // Week view: double-click column to add event
+  $$('.week-col').forEach(col => {
+    col.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.week-task') || e.target.closest('.cal-event-dot')) return;
+      const date = col.dataset.date;
+      if (date) openEventModal(date);
+    });
+  });
+
+  // Week view: click event to edit
+  $$('.week-event').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ev = (state.events || []).find(ev => ev.id === el.dataset.eventId);
+      if (ev) openEventModal(ev.date, ev);
+    });
+  });
+}
+
+// ========== Event Modal ==========
+const EVENT_COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4'];
+
+function openEventModal(date, existingEvent) {
+  // Remove any existing event modal
+  const old = $('#eventModal');
+  if (old) old.remove();
+
+  const ev = existingEvent || {};
+  const isEdit = !!existingEvent;
+
+  const modal = document.createElement('div');
+  modal.id = 'eventModal';
+  modal.className = 'modal-overlay active';
+  modal.innerHTML = `
+    <div class="modal event-modal">
+      <div class="modal-header">
+        <h2>${isEdit ? 'Edit Event' : 'New Event'}</h2>
+        <button class="modal-close" id="eventModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Event Name</label>
+          <input type="text" id="eventName" class="form-input" value="${esc(ev.name || '')}" placeholder="e.g. Doctor's appointment">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="eventDate" class="form-input" value="${ev.date || date}">
+          </div>
+          <div class="form-group">
+            <label>Time (optional)</label>
+            <input type="time" id="eventTime" class="form-input" value="${ev.time || ''}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description (optional)</label>
+          <textarea id="eventDesc" class="form-input" rows="2" placeholder="Notes...">${esc(ev.description || '')}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <div class="event-color-picker" id="eventColorPicker">
+            ${EVENT_COLORS.map(c => `<button type="button" class="event-color-swatch ${(ev.color || '#3b82f6') === c ? 'active' : ''}" data-color="${c}" style="background:${c}"></button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        ${isEdit ? '<button class="btn btn-danger" id="eventDeleteBtn">Delete</button>' : ''}
+        <button class="btn btn-primary" id="eventSaveBtn">${isEdit ? 'Update' : 'Add Event'}</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+
+  let selectedColor = ev.color || '#3b82f6';
+
+  $$('#eventColorPicker .event-color-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      $$('#eventColorPicker .event-color-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      selectedColor = sw.dataset.color;
+    });
+  });
+
+  $('#eventModalClose').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+  $('#eventSaveBtn').addEventListener('click', () => {
+    const name = $('#eventName').value.trim();
+    if (!name) return;
+    if (!state.events) state.events = [];
+
+    const eventData = {
+      id: isEdit ? ev.id : 'evt-' + Date.now(),
+      name,
+      date: $('#eventDate').value,
+      time: $('#eventTime').value || '',
+      description: $('#eventDesc').value.trim(),
+      color: selectedColor,
+    };
+
+    if (isEdit) {
+      const idx = state.events.findIndex(e => e.id === ev.id);
+      if (idx >= 0) state.events[idx] = eventData;
+    } else {
+      state.events.push(eventData);
+    }
+
+    saveData(state);
+    modal.remove();
+    renderCalendar();
+  });
+
+  if (isEdit && $('#eventDeleteBtn')) {
+    $('#eventDeleteBtn').addEventListener('click', () => {
+      state.events = state.events.filter(e => e.id !== ev.id);
+      saveData(state);
+      modal.remove();
+      renderCalendar();
+    });
+  }
+
+  $('#eventName').focus();
 }

@@ -28,7 +28,6 @@ function openModal(taskId = null, scheduledHour = null) {
     $('#taskId').value = task.id;
     $('#taskName').value = task.name;
     $('#taskDesc').value = task.description || '';
-    $('#taskPriority').value = task.priority;
     $('#taskStatus').value = task.status;
     $('#taskCategory').value = task.category;
     $('#taskDueDate').value = task.dueDate || '';
@@ -114,7 +113,6 @@ function handleSaveTask(e) {
   const taskData = {
     name: $('#taskName').value.trim(),
     description: $('#taskDesc').value.trim(),
-    priority: $('#taskPriority').value,
     status: $('#taskStatus').value,
     category: $('#taskCategory').value,
     project: $('#taskCategory').value === 'work' ? ($('#taskProject').value || null) : null,

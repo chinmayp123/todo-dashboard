@@ -360,6 +360,47 @@ body {
 .view { display: none; }
 .view.active { display: block; }
 
+/* ========== Dashboard Project Filter ========== */
+.dashboard-project-filter {
+  margin-bottom: 20px;
+}
+
+.dash-project-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dash-project-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dash-project-tab:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.dash-project-tab.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.dash-project-tab.active .category-dot {
+  background: white !important;
+}
+
 /* ========== Stats Grid ========== */
 .stats-grid {
   display: grid;
@@ -1704,6 +1745,86 @@ body {
 .cal-task-dot.medium { background: var(--yellow-bg); color: var(--yellow); }
 .cal-task-dot.low { background: var(--blue-bg); color: var(--blue); }
 
+.cal-event-dot {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  transition: opacity 0.15s;
+}
+
+.cal-event-dot:hover {
+  opacity: 0.8;
+}
+
+.week-event {
+  font-size: 11px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.week-event-time {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ========== Event Modal ========== */
+.event-modal {
+  max-width: 440px;
+}
+
+.event-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.event-color-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.event-color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.event-color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.event-color-swatch.active {
+  border-color: var(--text-primary);
+  transform: scale(1.15);
+}
+
+.btn-danger {
+  background: var(--red);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-danger:hover {
+  opacity: 0.85;
+}
+
 /* ========== Calendar Week View ========== */
 .calendar-week {
   border: 1px solid var(--border);
@@ -2400,6 +2521,23 @@ body {
   font-size: 12px;
   font-weight: 600;
   color: var(--accent);
+}
+
+.gym-bw-badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 8px;
+  letter-spacing: 0.3px;
+}
+
+.gym-bw-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 4px;
 }
 
 .gym-entry-del {

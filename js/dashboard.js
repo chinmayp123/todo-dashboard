@@ -1,6 +1,40 @@
 // ========== Dashboard ==========
+let dashboardProjectFilter = null; // null = all projects
+
+function renderDashboardProjectFilter() {
+  const projects = state.projects || [];
+  if (!projects.length) {
+    $('#dashboardProjectFilter').innerHTML = '';
+    return;
+  }
+  $('#dashboardProjectFilter').innerHTML = `
+    <div class="dash-project-tabs">
+      <button class="dash-project-tab ${dashboardProjectFilter === null ? 'active' : ''}" data-proj="all">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        All Projects
+      </button>
+      ${projects.map(p => `
+        <button class="dash-project-tab ${dashboardProjectFilter === p.id ? 'active' : ''}" data-proj="${p.id}">
+          <span class="category-dot" style="background:${p.color}"></span>${esc(p.name)}
+        </button>
+      `).join('')}
+    </div>`;
+
+  $$('.dash-project-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      dashboardProjectFilter = tab.dataset.proj === 'all' ? null : tab.dataset.proj;
+      renderDashboard();
+    });
+  });
+}
+
 function renderDashboard() {
-  const tasks = state.tasks;
+  renderDashboardProjectFilter();
+
+  let tasks = state.tasks;
+  if (dashboardProjectFilter) {
+    tasks = tasks.filter(t => t.project === dashboardProjectFilter);
+  }
   const today = new Date().toISOString().split('T')[0];
 
   const total = tasks.length;
@@ -14,7 +48,7 @@ function renderDashboard() {
   $('#overdueTasks').textContent = overdue;
 
   renderReminders(today);
-  renderMyTasksBoard();
+  renderMyTasksBoard(tasks);
 
   // Deadlines
   const upcoming = tasks
@@ -37,11 +71,12 @@ function renderDashboard() {
 }
 
 // ========== My Tasks Board (Dashboard) ==========
-function renderMyTasksBoard() {
+function renderMyTasksBoard(taskPool) {
+  const allTasks = taskPool || state.tasks;
   const today = new Date().toISOString().split('T')[0];
 
   const cats = state.categories.filter(c =>
-    state.tasks.some(t => t.category === c.id)
+    allTasks.some(t => t.category === c.id)
   );
   const tabsHtml = `
     <button class="my-tasks-tab ${activeTaskTab === null ? 'active' : ''}" data-cat="all">All</button>
@@ -55,11 +90,11 @@ function renderMyTasksBoard() {
   $$('.my-tasks-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       activeTaskTab = tab.dataset.cat === 'all' ? null : tab.dataset.cat;
-      renderMyTasksBoard();
+      renderMyTasksBoard(allTasks);
     });
   });
 
-  let filtered = state.tasks.filter(t => t.status !== 'done');
+  let filtered = allTasks.filter(t => t.status !== 'done');
   if (activeTaskTab) {
     filtered = filtered.filter(t => t.category === activeTaskTab);
   }
@@ -384,7 +419,7 @@ function renderReminders(today) {
 
   // --- Calorie reminder ---
   const dietToday = state.diet.filter(e => e.date === today);
-  const calToday = dietToday.reduce((s, e) => s + (e.calories || 0) * (e.servings || 1), 0);
+  const calToday = dietToday.reduce((s, e) => s + (e.calories || 0), 0);
   const calGoal = 2900;
   if (hour >= 12 && calToday < calGoal * 0.4) {
     reminders.push({
@@ -407,7 +442,7 @@ function renderReminders(today) {
   }
 
   // --- Protein reminder ---
-  const proteinToday = dietToday.reduce((s, e) => s + (e.protein || 0) * (e.servings || 1), 0);
+  const proteinToday = dietToday.reduce((s, e) => s + (e.protein || 0), 0);
   if (hour >= 14 && proteinToday < 50) {
     reminders.push({
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
@@ -460,6 +495,17 @@ function renderReminders(today) {
     btn.addEventListener('click', () => {
       const habit = btn.dataset.habit;
       localStorage.setItem(`tf_${habit}_` + today, '1');
+
+      // Auto-log pushups & situps to gym when morning routine is completed
+      if (habit === 'morning') {
+        const alreadyPushups = state.gym.some(e => e.date === today && e.exercise === 'Push Ups' && e._fromReminder);
+        if (!alreadyPushups) {
+          state.gym.push({ date: today, exercise: 'Push Ups', sets: [{ reps: 10, weight: 0 }], bodyweight: true, _fromReminder: true });
+          state.gym.push({ date: today, exercise: 'Sit Ups', sets: [{ reps: 10, weight: 0 }], bodyweight: true, _fromReminder: true });
+          saveData(state);
+        }
+      }
+
       renderReminders(today);
     });
   });
