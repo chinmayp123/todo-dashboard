@@ -35,7 +35,7 @@ function renderDashboard() {
   if (dashboardProjectFilter) {
     tasks = tasks.filter(t => t.project === dashboardProjectFilter);
   }
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayStr();
 
   const total = tasks.length;
   const inProgress = tasks.filter(t => t.status === 'in-progress').length;
@@ -73,7 +73,7 @@ function renderDashboard() {
 // ========== My Tasks Board (Dashboard) ==========
 function renderMyTasksBoard(taskPool) {
   const allTasks = taskPool || state.tasks;
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayStr();
 
   const cats = state.categories.filter(c =>
     allTasks.some(t => t.category === c.id)
@@ -153,7 +153,7 @@ function renderMiniCalendar() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayStr();
 
   const miniHolidays = getUSHolidays(year);
   let html = '';
@@ -186,9 +186,9 @@ function renderMiniCalendar() {
 // ========== Daily Schedule ==========
 function renderSchedule() {
   const now = new Date();
-  const nowStr = now.toISOString().split('T')[0];
+  const nowStr = toLocalDateStr(now);
   const viewDate = new Date(scheduleDate);
-  const viewStr = viewDate.toISOString().split('T')[0];
+  const viewStr = toLocalDateStr(viewDate);
   const isToday = viewStr === nowStr;
   const currentHour = isToday ? now.getHours() : -1;
 

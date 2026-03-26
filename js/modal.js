@@ -46,7 +46,7 @@ function openModal(taskId = null, scheduledHour = null) {
     $('#deleteBtn').style.display = 'none';
     if (scheduledHour != null) {
       $('#taskScheduledHour').value = scheduledHour;
-      $('#taskDueDate').value = new Date().toISOString().split('T')[0];
+      $('#taskDueDate').value = getTodayStr();
     }
   }
 
@@ -127,7 +127,7 @@ function handleSaveTask(e) {
   if (id) {
     const task = state.tasks.find(t => t.id === id);
     if (task) {
-      if (taskData.status === 'done' && task.status !== 'done') taskData.completedAt = new Date().toISOString().split('T')[0];
+      if (taskData.status === 'done' && task.status !== 'done') taskData.completedAt = getTodayStr();
       else if (taskData.status !== 'done') taskData.completedAt = null;
       Object.assign(task, taskData);
     }
@@ -135,7 +135,7 @@ function handleSaveTask(e) {
     state.tasks.push({
       id: Date.now().toString(),
       ...taskData,
-      created: new Date().toISOString().split('T')[0],
+      created: getTodayStr(),
     });
   }
 
@@ -158,7 +158,7 @@ function toggleTaskDone(id) {
   const task = state.tasks.find(t => t.id === id);
   if (!task) return;
   task.status = task.status === 'done' ? 'todo' : 'done';
-  task.completedAt = task.status === 'done' ? new Date().toISOString().split('T')[0] : null;
+  task.completedAt = task.status === 'done' ? getTodayStr() : null;
   saveData(state);
   render();
 }

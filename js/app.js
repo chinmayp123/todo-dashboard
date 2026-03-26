@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     render();
   }
+
+  // Initialize Firebase real-time sync
+  initFirebaseSync(applyFirebaseData);
+  // Push current local data to Firebase on first load
+  setTimeout(() => saveToFirebase(state), 1500);
 });
 
 function setHeaderDate() {

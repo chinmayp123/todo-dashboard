@@ -422,6 +422,47 @@ const FOOD_DATABASE = {
   'chicken curry': { calories: 290, protein: 22, carbs: 10, fat: 18, serving: '1 cup', fiber: 2, sugar: 3 },
   'fish curry': { calories: 220, protein: 20, carbs: 8, fat: 12, serving: '1 cup', fiber: 1.5, sugar: 2 },
   'egg curry': { calories: 250, protein: 14, carbs: 10, fat: 18, serving: '1 cup (2 eggs)', fiber: 2, sugar: 3 },
+  'baingan bharta': { calories: 165, protein: 4, carbs: 14, fat: 11, serving: '1 cup', fiber: 5, sugar: 5 },
+  'baingan masala': { calories: 165, protein: 4, carbs: 14, fat: 11, serving: '1 cup', fiber: 5, sugar: 5 },
+  'aloo paratha': { calories: 210, protein: 5, carbs: 28, fat: 9, serving: '1 piece', fiber: 2, sugar: 1 },
+  'gobi paratha': { calories: 200, protein: 5, carbs: 26, fat: 8, serving: '1 piece', fiber: 2.5, sugar: 1 },
+  'paneer paratha': { calories: 250, protein: 8, carbs: 25, fat: 13, serving: '1 piece', fiber: 1.5, sugar: 0.5 },
+  'methi paratha': { calories: 190, protein: 5, carbs: 24, fat: 8, serving: '1 piece', fiber: 2, sugar: 0.5 },
+  'mooli paratha': { calories: 195, protein: 4.5, carbs: 25, fat: 8, serving: '1 piece', fiber: 2, sugar: 1 },
+  'chole bhature': { calories: 450, protein: 14, carbs: 55, fat: 20, serving: '1 plate (2 bhature + chole)', fiber: 8, sugar: 4 },
+  'dal makhani': { calories: 260, protein: 12, carbs: 28, fat: 12, serving: '1 cup', fiber: 7, sugar: 3 },
+  'dal tadka': { calories: 200, protein: 12, carbs: 28, fat: 5, serving: '1 cup', fiber: 7, sugar: 2 },
+  'dal fry': { calories: 210, protein: 13, carbs: 28, fat: 5, serving: '1 cup', fiber: 7, sugar: 2 },
+  'kadhi': { calories: 150, protein: 5, carbs: 12, fat: 9, serving: '1 cup', fiber: 1, sugar: 3 },
+  'kadhi pakora': { calories: 200, protein: 6, carbs: 16, fat: 13, serving: '1 cup', fiber: 1.5, sugar: 3 },
+  'shahi paneer': { calories: 330, protein: 14, carbs: 10, fat: 27, serving: '1 cup', fiber: 2, sugar: 4 },
+  'matar paneer': { calories: 280, protein: 14, carbs: 15, fat: 19, serving: '1 cup', fiber: 4, sugar: 4 },
+  'malai kofta': { calories: 350, protein: 10, carbs: 18, fat: 27, serving: '1 cup (3 kofta)', fiber: 3, sugar: 5 },
+  'bhindi masala': { calories: 130, protein: 3, carbs: 10, fat: 9, serving: '1 cup', fiber: 4, sugar: 3 },
+  'aloo matar': { calories: 180, protein: 5, carbs: 24, fat: 7, serving: '1 cup', fiber: 4, sugar: 3 },
+  'aloo palak': { calories: 170, protein: 4, carbs: 20, fat: 8, serving: '1 cup', fiber: 3.5, sugar: 2 },
+  'mixed veg curry': { calories: 160, protein: 4, carbs: 16, fat: 9, serving: '1 cup', fiber: 4, sugar: 4 },
+  'mushroom masala': { calories: 175, protein: 6, carbs: 10, fat: 12, serving: '1 cup', fiber: 2, sugar: 3 },
+  'keema': { calories: 310, protein: 24, carbs: 8, fat: 20, serving: '1 cup', fiber: 2, sugar: 3 },
+  'keema matar': { calories: 320, protein: 24, carbs: 12, fat: 20, serving: '1 cup', fiber: 3, sugar: 3 },
+  'butter chicken': { calories: 340, protein: 24, carbs: 10, fat: 22, serving: '1 cup', fiber: 2, sugar: 4 },
+  'chicken tikka masala': { calories: 310, protein: 22, carbs: 12, fat: 20, serving: '1 cup', fiber: 2, sugar: 4 },
+  'lamb curry': { calories: 330, protein: 26, carbs: 10, fat: 22, serving: '1 cup', fiber: 2, sugar: 3 },
+  'lamb rogan josh': { calories: 340, protein: 26, carbs: 8, fat: 24, serving: '1 cup', fiber: 2, sugar: 3 },
+  'goat curry': { calories: 310, protein: 28, carbs: 8, fat: 18, serving: '1 cup', fiber: 2, sugar: 3 },
+  'shrimp curry': { calories: 230, protein: 22, carbs: 10, fat: 12, serving: '1 cup', fiber: 2, sugar: 3 },
+  'korma': { calories: 300, protein: 18, carbs: 12, fat: 22, serving: '1 cup', fiber: 2, sugar: 4 },
+  'vindaloo': { calories: 290, protein: 24, carbs: 10, fat: 18, serving: '1 cup', fiber: 2, sugar: 3 },
+  'saag': { calories: 180, protein: 8, carbs: 10, fat: 13, serving: '1 cup', fiber: 4, sugar: 2 },
+  'sarson ka saag': { calories: 190, protein: 8, carbs: 12, fat: 13, serving: '1 cup', fiber: 5, sugar: 2 },
+  'makki ki roti': { calories: 120, protein: 3, carbs: 22, fat: 2.5, serving: '1 piece', fiber: 2, sugar: 0.5 },
+  'bhature': { calories: 200, protein: 4, carbs: 28, fat: 8, serving: '1 piece', fiber: 1, sugar: 1 },
+  'thepla': { calories: 150, protein: 4, carbs: 18, fat: 7, serving: '1 piece', fiber: 2, sugar: 0.5 },
+  'kulcha': { calories: 175, protein: 5, carbs: 28, fat: 5, serving: '1 piece', fiber: 1.5, sugar: 1 },
+  'samosa': { calories: 260, protein: 5, carbs: 30, fat: 14, serving: '1 piece', fiber: 2, sugar: 2 },
+  'pakora': { calories: 180, protein: 4, carbs: 16, fat: 12, serving: '5 pieces', fiber: 1.5, sugar: 1 },
+  'onion bhaji': { calories: 170, protein: 3, carbs: 15, fat: 11, serving: '3 pieces', fiber: 1, sugar: 2 },
+  'pav bhaji': { calories: 380, protein: 10, carbs: 48, fat: 16, serving: '1 plate (2 pav + bhaji)', fiber: 5, sugar: 6 },
   'poori': { calories: 101, protein: 2.5, carbs: 12, fat: 5, serving: '1 piece', fiber: 0.5, sugar: 0.3 },
   'papadam': { calories: 40, protein: 2, carbs: 5, fat: 1.5, serving: '1 piece', fiber: 1, sugar: 0.2 },
   'raita': { calories: 60, protein: 3, carbs: 5, fat: 3, serving: '1/2 cup', fiber: 0.5, sugar: 4 },
@@ -442,7 +483,7 @@ function renderDiet() {
   dateInput.value = dietViewDate;
 
   // Date navigation label
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayStr();
   const isToday = dietViewDate === todayStr;
   const viewDate = new Date(dietViewDate + 'T00:00:00');
   $('#dietDateLabel').textContent = isToday ? 'Today' :
@@ -788,17 +829,17 @@ function bindDietEvents() {
   $('#dietPrevDay').addEventListener('click', () => {
     const d = new Date(dietViewDate + 'T00:00:00');
     d.setDate(d.getDate() - 1);
-    dietViewDate = d.toISOString().split('T')[0];
+    dietViewDate = toLocalDateStr(d);
     renderDiet();
   });
   $('#dietNextDay').addEventListener('click', () => {
     const d = new Date(dietViewDate + 'T00:00:00');
     d.setDate(d.getDate() + 1);
-    dietViewDate = d.toISOString().split('T')[0];
+    dietViewDate = toLocalDateStr(d);
     renderDiet();
   });
   $('#dietToday').addEventListener('click', () => {
-    dietViewDate = new Date().toISOString().split('T')[0];
+    dietViewDate = getTodayStr();
     renderDiet();
   });
 

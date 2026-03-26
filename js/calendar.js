@@ -20,7 +20,7 @@ function renderCalendarMonth() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayStr();
 
   let html = '';
 
@@ -83,7 +83,7 @@ function renderCalendarWeek() {
   const weekStart = new Date(d);
   weekStart.setDate(d.getDate() - dayOfWeek);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayStr();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const weekEnd = new Date(weekStart);
@@ -106,7 +106,7 @@ function renderCalendarWeek() {
   for (let i = 0; i < 7; i++) {
     const colDate = new Date(weekStart);
     colDate.setDate(weekStart.getDate() + i);
-    const dateStr = colDate.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(colDate);
     const isToday = dateStr === today;
     const holiday = holidays.find(h => h.date === dateStr);
     const dayTasks = state.tasks.filter(t => t.dueDate === dateStr);

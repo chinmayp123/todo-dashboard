@@ -129,7 +129,7 @@ function renderBoard() {
       const task = state.tasks.find(t => t.id === taskId);
       if (task) {
         task.status = newStatus;
-        if (newStatus === 'done') task.completedAt = new Date().toISOString().split('T')[0];
+        if (newStatus === 'done') task.completedAt = getTodayStr();
         else task.completedAt = null;
         saveData(state);
         render();

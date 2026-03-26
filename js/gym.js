@@ -36,7 +36,7 @@ function renderGym() {
   dateInput.value = gymViewDate;
 
   // Date label
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayStr();
   const viewDate = new Date(gymViewDate + 'T00:00:00');
   const isToday = gymViewDate === todayStr;
   $('#gymDateLabel').textContent = isToday ? 'Today' :
@@ -142,17 +142,17 @@ function bindGymEvents() {
   $('#gymPrevDay').addEventListener('click', () => {
     const d = new Date(gymViewDate + 'T00:00:00');
     d.setDate(d.getDate() - 1);
-    gymViewDate = d.toISOString().split('T')[0];
+    gymViewDate = toLocalDateStr(d);
     renderGym();
   });
   $('#gymNextDay').addEventListener('click', () => {
     const d = new Date(gymViewDate + 'T00:00:00');
     d.setDate(d.getDate() + 1);
-    gymViewDate = d.toISOString().split('T')[0];
+    gymViewDate = toLocalDateStr(d);
     renderGym();
   });
   $('#gymToday').addEventListener('click', () => {
-    gymViewDate = new Date().toISOString().split('T')[0];
+    gymViewDate = getTodayStr();
     renderGym();
   });
   $('#gymAddSetBtn').addEventListener('click', () => { gymSets.push({ reps: '', weight: '' }); renderGym(); });

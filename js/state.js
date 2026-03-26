@@ -52,6 +52,32 @@ function saveData(data) {
   localStorage.setItem('tf_water', JSON.stringify(data.water));
   localStorage.setItem('tf_projects', JSON.stringify(data.projects));
   localStorage.setItem('tf_events', JSON.stringify(data.events));
+  localStorage.setItem('tf_last_updated', Date.now().toString());
+  // Sync to Firebase
+  saveToFirebase(data);
+}
+
+function applyFirebaseData(data) {
+  state.tasks = data.tasks || [];
+  state.categories = data.categories || [];
+  state.projects = data.projects || [];
+  state.gym = data.gym || [];
+  state.diet = data.diet || [];
+  state.customFoods = data.customFoods || {};
+  state.water = data.water || {};
+  state.events = data.events || [];
+  // Cache locally
+  localStorage.setItem('tf_tasks', JSON.stringify(state.tasks));
+  localStorage.setItem('tf_categories', JSON.stringify(state.categories));
+  localStorage.setItem('tf_gym', JSON.stringify(state.gym));
+  localStorage.setItem('tf_diet', JSON.stringify(state.diet));
+  localStorage.setItem('tf_custom_foods', JSON.stringify(state.customFoods));
+  localStorage.setItem('tf_water', JSON.stringify(state.water));
+  localStorage.setItem('tf_projects', JSON.stringify(state.projects));
+  localStorage.setItem('tf_events', JSON.stringify(state.events));
+  localStorage.setItem('tf_last_updated', (data.lastUpdated || Date.now()).toString());
+  // Re-render the app
+  if (typeof render === 'function') render();
 }
 
 // ========== State ==========
@@ -66,7 +92,7 @@ let boardFoldersCollapsed = {};
 let scheduleDate = new Date();
 let calViewMode = 'month';
 let gymSets = [{ reps: '', weight: '' }];
-let gymViewDate = new Date().toISOString().split('T')[0];
-let dietViewDate = new Date().toISOString().split('T')[0];
+let gymViewDate = getTodayStr();
+let dietViewDate = getTodayStr();
 let dietBaseMacros = null; // {calories, protein, carbs, fat} per 1 serving
 let activeProject = null; // null = all, or a project id

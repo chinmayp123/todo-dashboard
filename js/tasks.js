@@ -8,7 +8,7 @@ function isArchived(t) {
 }
 
 function renderTasksView() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayStr();
   const search = $('#searchInput').value.toLowerCase();
   const statusF = $('#filterStatus').value;
   const categoryF = $('#filterCategory').value;
