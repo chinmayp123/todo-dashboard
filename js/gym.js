@@ -20,6 +20,7 @@ const COMMON_EXERCISES = [
 ];
 
 let gymBodyweight = false; // current input mode
+let gymEditingIdx = null; // index into day's exercises when editing
 
 function isBodyweightExercise(name) {
   if (!name) return false;
@@ -106,7 +107,10 @@ function renderGym() {
           </div>
           <div class="gym-entry-right">
             <span class="gym-entry-vol">${isBW ? totalRepsEx + ' reps' : vol.toLocaleString() + ' lbs'}</span>
-            <button class="gym-entry-del" data-gym-idx="${idx}">
+            <button class="gym-entry-edit" data-gym-idx="${idx}" title="Edit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="gym-entry-del" data-gym-idx="${idx}" title="Delete">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button>
           </div>
@@ -120,6 +124,24 @@ function renderGym() {
       </div>`;
     }).join('');
   }
+
+  // Bind edit
+  $$('.gym-entry-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dayEx = state.gym.filter(e => e.date === gymViewDate);
+      const ex = dayEx[btn.dataset.gymIdx];
+      if (!ex) return;
+      gymEditingIdx = parseInt(btn.dataset.gymIdx);
+      $('#gymExerciseName').value = ex.exercise;
+      gymSets = ex.sets.map(s => ({ reps: String(s.reps), weight: String(s.weight) }));
+      // Update button text
+      $('#gymSaveExerciseBtn').innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        Update Exercise`;
+      renderGym();
+      $('#gymExerciseName').focus();
+    });
+  });
 
   // Bind delete
   $$('.gym-entry-del').forEach(btn => {
@@ -164,7 +186,24 @@ function bindGymEvents() {
       .filter(s => s.reps && (bw || s.weight))
       .map(s => ({ reps: Number(s.reps), weight: bw ? 0 : Number(s.weight) }));
     if (!validSets.length) return;
-    state.gym.push({ date: gymViewDate, exercise: name, sets: validSets, bodyweight: bw });
+
+    if (gymEditingIdx !== null) {
+      // Update existing exercise
+      const dayEx = state.gym.filter(e => e.date === gymViewDate);
+      const target = dayEx[gymEditingIdx];
+      if (target) {
+        target.exercise = name;
+        target.sets = validSets;
+        target.bodyweight = bw;
+      }
+      gymEditingIdx = null;
+      $('#gymSaveExerciseBtn').innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Exercise`;
+    } else {
+      state.gym.push({ date: gymViewDate, exercise: name, sets: validSets, bodyweight: bw });
+    }
+
     saveData(state);
     $('#gymExerciseName').value = '';
     gymSets = [{ reps: '', weight: '' }];

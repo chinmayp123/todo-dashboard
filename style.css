@@ -2540,6 +2540,7 @@ body {
   padding: 0 4px;
 }
 
+.gym-entry-edit,
 .gym-entry-del {
   background: none;
   border: none;
@@ -2553,7 +2554,9 @@ body {
   align-items: center;
 }
 
+.gym-entry:hover .gym-entry-edit,
 .gym-entry:hover .gym-entry-del { opacity: 1; }
+.gym-entry-edit:hover { color: var(--accent); }
 .gym-entry-del:hover { color: var(--red); }
 
 /* Sets Table */
