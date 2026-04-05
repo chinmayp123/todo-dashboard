@@ -248,7 +248,7 @@ function renderSchedule() {
               <div class="schedule-event-meta">
                 <span class="schedule-event-priority ${t.priority}">${t.priority}</span>
                 ${t.duration && t.duration !== 1 ? `<span>${t.duration}h</span>` : ''}
-                ${t.subtasks.length ? `<span>${t.subtasks.filter(s => s.done).length}/${t.subtasks.length} subtasks</span>` : ''}
+                ${(t.subtasks && t.subtasks.length) ? `<span>${t.subtasks.filter(s => s.done).length}/${t.subtasks.length} subtasks</span>` : ''}
               </div>
               <button class="schedule-event-remove" data-id="${t.id}" title="Unschedule">&times;</button>
             </div>`;

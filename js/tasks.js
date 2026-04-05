@@ -84,7 +84,7 @@ function renderTaskRow(t, today) {
   const cat = state.categories.find(c => c.id === t.category);
   const proj = t.project ? state.projects.find(p => p.id === t.project) : null;
   const isOverdue = t.dueDate && t.dueDate < today && t.status !== 'done';
-  const subtaskInfo = t.subtasks.length ? `${t.subtasks.filter(s => s.done).length}/${t.subtasks.length}` : '';
+  const subtaskInfo = (t.subtasks && t.subtasks.length) ? `${t.subtasks.filter(s => s.done).length}/${t.subtasks.length}` : '';
   const createdStr = t.created ? formatDate(t.created) : '';
   const completedStr = t.status === 'done' && t.completedAt ? formatDate(t.completedAt) : '';
   return `
