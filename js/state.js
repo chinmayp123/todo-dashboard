@@ -76,8 +76,13 @@ function applyFirebaseData(data) {
   localStorage.setItem('tf_projects', JSON.stringify(state.projects));
   localStorage.setItem('tf_events', JSON.stringify(state.events));
   localStorage.setItem('tf_last_updated', (data.lastUpdated || Date.now()).toString());
-  // Re-render the app
-  if (typeof render === 'function') render();
+  // Re-render the app after a tick to let DOM settle
+  if (typeof render === 'function') {
+    setTimeout(() => {
+      try { populateCategoryDropdowns(); } catch(e) {}
+      render();
+    }, 50);
+  }
 }
 
 // ========== State ==========

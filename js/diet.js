@@ -480,6 +480,8 @@ const FOOD_DATABASE = {
 function renderDiet() {
   const dateInput = $('#dietDate');
   if (!dateInput) return;
+  // Ensure dietViewDate is set
+  if (!dietViewDate) dietViewDate = getTodayStr();
   dateInput.value = dietViewDate;
 
   // Date navigation label
