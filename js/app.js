@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     render();
   }
 
+  // Scroll to top on load
+  window.scrollTo(0, 0);
+
   // Initialize Firebase real-time sync
   initFirebaseSync(applyFirebaseData);
   // Push current local data to Firebase on first load

@@ -52,7 +52,11 @@ function renderCalendarMonth() {
     html += `<div class="cal-day other-month"><span class="cal-day-number">${i}</span></div>`;
   }
 
-  $('#calendarDays').innerHTML = html;
+  // Remove old day cells but keep day-name headers
+  const grid = $('#calMonthView');
+  const oldCells = grid.querySelectorAll('.cal-day');
+  oldCells.forEach(c => c.remove());
+  grid.insertAdjacentHTML('beforeend', html);
 
   $$('.cal-task-dot').forEach(el => {
     el.addEventListener('click', (e) => { e.stopPropagation(); openModal(el.dataset.id); });

@@ -323,7 +323,10 @@ function renderSchedule() {
 
   const currentSlot = $('.schedule-hour.current');
   if (currentSlot) {
-    currentSlot.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const container = currentSlot.closest('.schedule-timeline');
+    if (container) {
+      container.scrollTop = currentSlot.offsetTop - container.offsetTop - container.clientHeight / 2;
+    }
   }
 }
 
