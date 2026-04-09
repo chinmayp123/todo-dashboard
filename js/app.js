@@ -24,11 +24,31 @@ function setHeaderDate() {
 
 // ========== Events ==========
 function bindEvents() {
+  // Mobile sidebar toggle
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = $('#sidebarOverlay');
+  const menuBtn = $('#mobileMenuBtn');
+  if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    });
+  }
+  if (overlay) {
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+  }
+
   // Navigation
   $$('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.dataset.view;
       switchView(view);
+      // Close mobile sidebar after navigation
+      if (sidebar) sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('active');
     });
   });
 
