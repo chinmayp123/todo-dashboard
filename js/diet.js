@@ -690,6 +690,45 @@ function selectFoodFromDropdown(name, data) {
   $('#dietServingInfo').innerHTML = `<span class="diet-serving-tag">${info.join(' &middot; ')}</span>`;
 }
 
+// Auto-add a logged food to the searchable food database (My Foods) if it's new.
+// Stores PER-SERVING macros so quantities scale correctly next time.
+function rememberFood(name, totals, servings) {
+  const key = (name || '').trim();
+  if (!key) return;
+  const lower = key.toLowerCase();
+  // Already a built-in food? Nothing to remember.
+  if (FOOD_DATABASE[lower]) return;
+  // Already saved (case-insensitive)? Don't duplicate or overwrite.
+  if (Object.keys(state.customFoods).some(k => k.toLowerCase() === lower)) return;
+  // No macros worth saving.
+  if (!totals.calories) return;
+
+  const n = Math.max(1, Number(servings) || 1);
+  // Prefer per-serving macros captured when picking from a dropdown; otherwise
+  // derive them from the entered totals divided by servings.
+  const per = dietBaseMacros ? dietBaseMacros : {
+    calories: Math.round(totals.calories / n),
+    protein: Math.round((totals.protein / n) * 10) / 10,
+    carbs: Math.round((totals.carbs / n) * 10) / 10,
+    fat: Math.round((totals.fat / n) * 10) / 10,
+  };
+  const serving = ($('#dietServingInfo').textContent || '')
+    .replace(/^Per\s+(serving:\s*)?/i, '')
+    .split('·')[0]
+    .replace(/\(.*$/, '')
+    .trim() || '1 serving';
+
+  state.customFoods[key] = {
+    calories: per.calories,
+    protein: per.protein,
+    carbs: per.carbs,
+    fat: per.fat,
+    serving,
+    fiber: 0,
+    sugar: 0,
+  };
+}
+
 function updateMacrosByServings() {
   if (!dietBaseMacros) return;
   const servings = Number($('#dietServings').value) || 1;
@@ -952,17 +991,24 @@ function bindDietEvents() {
   $('#dietSaveBtn').addEventListener('click', () => {
     const food = $('#dietFoodName').value.trim();
     if (!food) return;
+    const servings = Number($('#dietServings').value) || 1;
+    const calories = Number($('#dietCalories').value) || 0;
+    const protein = Number($('#dietProtein').value) || 0;
+    const carbs = Number($('#dietCarbs').value) || 0;
+    const fat = Number($('#dietFat').value) || 0;
     state.diet.push({
       date: dietViewDate,
       meal: $('#dietMeal').value,
       food,
-      servings: Number($('#dietServings').value) || 1,
+      servings,
       // Macros already include servings multiplier from the input fields
-      calories: Number($('#dietCalories').value) || 0,
-      protein: Number($('#dietProtein').value) || 0,
-      carbs: Number($('#dietCarbs').value) || 0,
-      fat: Number($('#dietFat').value) || 0,
+      calories,
+      protein,
+      carbs,
+      fat,
     });
+    // Auto-remember any new food so it shows up in search next time
+    rememberFood(food, { calories, protein, carbs, fat }, servings);
     saveData(state);
     clearDietForm();
     renderDiet();

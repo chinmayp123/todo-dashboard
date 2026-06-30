@@ -141,6 +141,11 @@ function bindEvents() {
   $('#addCategoryBtn').addEventListener('click', handleAddCategory);
   $('#addProjectBtn').addEventListener('click', handleAddProject);
 
+  // Backup / Restore
+  $('#exportBtn').addEventListener('click', exportBackup);
+  $('#importBtn').addEventListener('click', () => $('#importFile').click());
+  $('#importFile').addEventListener('change', importBackup);
+
   // Keyboard
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeModal();
@@ -252,6 +257,64 @@ function handleAddProject() {
   state.projects.push({ id: 'proj-' + Date.now(), name: name.trim(), color });
   saveData(state);
   render();
+}
+
+// ========== Backup / Restore ==========
+function exportBackup() {
+  const payload = {
+    tasks: state.tasks,
+    categories: state.categories,
+    projects: state.projects,
+    gym: state.gym,
+    diet: state.diet,
+    customFoods: state.customFoods,
+    water: state.water,
+    events: state.events,
+    exportedAt: new Date().toISOString(),
+    version: 1,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `lifestack-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!confirm('Restore this backup? This REPLACES all current data on this device and in the cloud.')) {
+        e.target.value = '';
+        return;
+      }
+      state.tasks = data.tasks || [];
+      state.categories = data.categories || [];
+      state.projects = data.projects || [];
+      state.gym = data.gym || [];
+      state.diet = data.diet || [];
+      state.customFoods = data.customFoods || {};
+      state.water = data.water || {};
+      state.events = data.events || [];
+      saveData(state);
+      populateCategoryDropdowns();
+      render();
+      alert('Backup restored successfully.');
+    } catch (err) {
+      alert('Could not read that backup file: ' + err.message);
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
 function populateCategoryDropdowns() {

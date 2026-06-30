@@ -342,6 +342,31 @@ body {
 
 .btn-secondary:hover { background: var(--border); }
 
+/* Sync status indicator */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+.sync-status .sync-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.sync-status.is-synced { color: var(--text-secondary); }
+.sync-status.is-synced .sync-dot { background: #22c55e; }
+.sync-status.is-saving .sync-dot { background: #eab308; }
+.sync-status.is-error { color: #ef4444; }
+.sync-status.is-error .sync-dot { background: #ef4444; }
+
 .btn-danger {
   background: var(--red-bg);
   color: var(--red);
