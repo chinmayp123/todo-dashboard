@@ -730,7 +730,8 @@ function renderDiet() {
         <div class="diet-history-day" data-diet-day="${day}">
           <div class="diet-history-day-header">
             <span class="diet-history-date">${new Date(day + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-            <span class="diet-history-cal">${Math.round(dayTotals.calories)} cal</span>
+            <span class="diet-history-cal ${dayTotals.calories > DIET_GOALS.calories ? 'over-budget' : 'under-budget'}"
+              title="${dayTotals.calories > DIET_GOALS.calories ? 'Over' : 'Under'} the ${DIET_GOALS.calories} cal budget">${Math.round(dayTotals.calories)} cal</span>
           </div>
           <div class="diet-history-macros">
             <span>${Math.round(dayTotals.protein)}g P</span>

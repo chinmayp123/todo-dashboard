@@ -3994,6 +3994,10 @@ button:not(:disabled):active {
   background: var(--red-bg);
 }
 
+/* ---- Diet history: over/under budget at a glance ---- */
+.diet-history-cal.under-budget { color: var(--green); }
+.diet-history-cal.over-budget { color: var(--red); }
+
 /* ---- Body Weight card ---- */
 .weight-card {
   margin-bottom: 20px;

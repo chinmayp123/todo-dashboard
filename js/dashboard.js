@@ -454,6 +454,23 @@ function renderReminders(today) {
     });
   }
 
+  // --- Weigh-in reminder (the scale is the scoreboard on a cut) ---
+  const weighDates = Object.keys(state.weight || {}).sort();
+  const lastWeighIn = weighDates[weighDates.length - 1] || null;
+  const daysSinceWeighIn = lastWeighIn
+    ? Math.round((new Date(today + 'T00:00:00') - new Date(lastWeighIn + 'T00:00:00')) / 86400000)
+    : null;
+  if (hour >= 6 && (daysSinceWeighIn === null || daysSinceWeighIn >= 3)) {
+    reminders.push({
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"/><polyline points="16,7 22,7 22,13"/></svg>',
+      color: 'var(--purple)',
+      bg: 'rgba(167, 139, 250, 0.1)',
+      text: daysSinceWeighIn === null ? 'No weigh-ins logged yet' : `No weigh-in in ${daysSinceWeighIn} days`,
+      sub: 'Hop on the scale — tracking weight is how the cut stays honest.',
+      action: `<button class="reminder-nav-btn" data-view="gym">Log Weight</button>`,
+    });
+  }
+
   // --- Protein reminder (extra important on a cut — protects muscle) ---
   const proteinToday = dietToday.reduce((s, e) => s + (e.protein || 0), 0);
   const proteinGoal = (typeof DIET_GOALS !== 'undefined' && DIET_GOALS.protein) || 150;
