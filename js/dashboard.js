@@ -28,6 +28,43 @@ function renderDashboardProjectFilter() {
   });
 }
 
+// Today's health at a glance — the numbers that matter on a cut
+function renderHealthStrip(today) {
+  const el = $('#healthGrid');
+  if (!el) return;
+  const g = (typeof getGoals === 'function') ? getGoals() : { calories: 2000, protein: 150, water: 66, weight: 150 };
+  const dietToday = state.diet.filter(e => e.date === today);
+  const cal = Math.round(dietToday.reduce((s, e) => s + (e.calories || 0), 0));
+  const protein = Math.round(dietToday.reduce((s, e) => s + (e.protein || 0), 0));
+  const water = (state.water[today] || []).reduce((s, v) => s + v, 0);
+  const weighIns = Object.entries(state.weight || {}).sort((a, b) => a[0].localeCompare(b[0]));
+  const latestW = weighIns.length ? weighIns[weighIns.length - 1][1] : null;
+  const calOver = cal > g.calories;
+
+  const tiles = [
+    { view: 'diet', label: 'Calories', value: cal, sub: `/ ${g.calories}`, pct: Math.min(100, (cal / g.calories) * 100), color: calOver ? 'var(--red)' : 'var(--accent)' },
+    { view: 'diet', label: 'Protein', value: `${protein}g`, sub: `/ ${g.protein}g`, pct: Math.min(100, (protein / g.protein) * 100), color: '#6366f1' },
+    { view: 'diet', label: 'Water', value: `${water} oz`, sub: `/ ${g.water} oz`, pct: Math.min(100, (water / g.water) * 100), color: '#38bdf8' },
+    { view: 'gym', label: 'Weight', value: latestW !== null ? `${latestW} lbs` : '—', sub: latestW !== null ? `→ ${g.weight} lbs` : 'log a weigh-in',
+      pct: null, note: latestW !== null ? `${Math.round(Math.abs(latestW - g.weight) * 10) / 10} lbs to go` : 'Tap to log your first', color: 'var(--purple)' },
+  ];
+
+  el.innerHTML = tiles.map(t => `
+    <div class="health-tile" data-view="${t.view}" title="Open ${t.view}">
+      <div class="health-tile-top">
+        <span class="health-tile-label">${t.label}</span>
+        <span class="health-tile-value">${t.value} <small>${t.sub}</small></span>
+      </div>
+      ${t.pct !== null
+        ? `<div class="health-bar-track"><div class="health-bar-fill" style="width:${t.pct}%;background:${t.color}"></div></div>`
+        : `<div class="health-tile-note">${t.note}</div>`}
+    </div>`).join('');
+
+  $$('.health-tile').forEach(tile => {
+    tile.addEventListener('click', () => switchView(tile.dataset.view));
+  });
+}
+
 function renderDashboard() {
   renderDashboardProjectFilter();
 
@@ -47,6 +84,7 @@ function renderDashboard() {
   animateNumber($('#completedTasks'), completed);
   animateNumber($('#overdueTasks'), overdue);
 
+  renderHealthStrip(today);
   renderReminders(today);
   renderMyTasksBoard(tasks);
 
