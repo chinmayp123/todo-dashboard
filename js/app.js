@@ -136,6 +136,7 @@ function bindEvents() {
   // Gym & Diet
   bindGymEvents();
   bindDietEvents();
+  bindGoalsEvents();
 
   // Add category / project
   $('#addCategoryBtn').addEventListener('click', handleAddCategory);

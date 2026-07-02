@@ -33,6 +33,7 @@ function loadData() {
   const events = localStorage.getItem('tf_events');
   const removedFoods = localStorage.getItem('tf_removed_foods');
   const weight = localStorage.getItem('tf_weight');
+  const goals = localStorage.getItem('tf_goals');
   return {
     tasks: tasks ? JSON.parse(tasks) : [...SAMPLE_TASKS],
     categories: categories ? JSON.parse(categories) : [...DEFAULT_CATEGORIES],
@@ -44,6 +45,7 @@ function loadData() {
     events: events ? JSON.parse(events) : [],
     removedFoods: removedFoods ? JSON.parse(removedFoods) : [],
     weight: weight ? JSON.parse(weight) : {},
+    goals: goals ? JSON.parse(goals) : {},
   };
 }
 
@@ -58,6 +60,7 @@ function saveData(data) {
   localStorage.setItem('tf_events', JSON.stringify(data.events));
   localStorage.setItem('tf_removed_foods', JSON.stringify(data.removedFoods || []));
   localStorage.setItem('tf_weight', JSON.stringify(data.weight || {}));
+  localStorage.setItem('tf_goals', JSON.stringify(data.goals || {}));
   localStorage.setItem('tf_last_updated', Date.now().toString());
   // Sync to Firebase
   saveToFirebase(data);
@@ -74,6 +77,7 @@ function applyFirebaseData(data) {
   state.events = data.events || [];
   state.removedFoods = data.removedFoods || [];
   state.weight = data.weight || {};
+  state.goals = data.goals || {};
   // Cache locally
   localStorage.setItem('tf_tasks', JSON.stringify(state.tasks));
   localStorage.setItem('tf_categories', JSON.stringify(state.categories));
@@ -85,6 +89,7 @@ function applyFirebaseData(data) {
   localStorage.setItem('tf_events', JSON.stringify(state.events));
   localStorage.setItem('tf_removed_foods', JSON.stringify(state.removedFoods));
   localStorage.setItem('tf_weight', JSON.stringify(state.weight));
+  localStorage.setItem('tf_goals', JSON.stringify(state.goals));
   localStorage.setItem('tf_last_updated', (data.lastUpdated || Date.now()).toString());
   // Re-render the app after a tick to let DOM settle
   if (typeof render === 'function') {

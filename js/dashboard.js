@@ -396,7 +396,7 @@ function renderReminders(today) {
   // --- Water reminder ---
   const waterEntries = state.water[today] || [];
   const waterTotal = waterEntries.reduce((s, v) => s + v, 0);
-  const waterGoal = 66;
+  const waterGoal = (typeof getGoals === 'function' && getGoals().water) || 66;
   if (waterTotal < waterGoal && hour >= 10) {
     const waterPct = Math.round((waterTotal / waterGoal) * 100);
     if (waterPct < 50 && hour >= 14) {
@@ -423,7 +423,7 @@ function renderReminders(today) {
   // --- Calorie reminder (cutting: over budget is the danger) ---
   const dietToday = state.diet.filter(e => e.date === today);
   const calToday = dietToday.reduce((s, e) => s + (e.calories || 0), 0);
-  const calGoal = (typeof DIET_GOALS !== 'undefined' && DIET_GOALS.calories) || 2000;
+  const calGoal = (typeof getGoals === 'function' && getGoals().calories) || 2000;
   const foodIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>';
   if (calToday > calGoal) {
     reminders.push({
@@ -473,7 +473,7 @@ function renderReminders(today) {
 
   // --- Protein reminder (extra important on a cut — protects muscle) ---
   const proteinToday = dietToday.reduce((s, e) => s + (e.protein || 0), 0);
-  const proteinGoal = (typeof DIET_GOALS !== 'undefined' && DIET_GOALS.protein) || 150;
+  const proteinGoal = (typeof getGoals === 'function' && getGoals().protein) || 150;
   if (hour >= 14 && proteinToday < 50) {
     reminders.push({
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',

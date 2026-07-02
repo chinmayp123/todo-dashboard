@@ -730,8 +730,8 @@ function renderDiet() {
         <div class="diet-history-day" data-diet-day="${day}">
           <div class="diet-history-day-header">
             <span class="diet-history-date">${new Date(day + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-            <span class="diet-history-cal ${dayTotals.calories > DIET_GOALS.calories ? 'over-budget' : 'under-budget'}"
-              title="${dayTotals.calories > DIET_GOALS.calories ? 'Over' : 'Under'} the ${DIET_GOALS.calories} cal budget">${Math.round(dayTotals.calories)} cal</span>
+            <span class="diet-history-cal ${dayTotals.calories > getGoals().calories ? 'over-budget' : 'under-budget'}"
+              title="${dayTotals.calories > getGoals().calories ? 'Over' : 'Under'} the ${getGoals().calories} cal budget">${Math.round(dayTotals.calories)} cal</span>
           </div>
           <div class="diet-history-macros">
             <span>${Math.round(dayTotals.protein)}g P</span>
@@ -1188,17 +1188,24 @@ function bindDietEvents() {
 }
 
 // ========== Goal Tracker ==========
-// 25yo male, 5'10", ~160 lbs → 150 lbs weight LOSS (cut started Jul 2026)
+// Defaults: 25yo male, 5'10", ~160 lbs → 150 lbs cut (started Jul 2026)
 // BMR ~1720, TDEE ~2500, -500 deficit = ~2000 cal/day (~1 lb/week)
-const DIET_GOALS = {
+// User-editable via the Goals modal; overrides live in state.goals (synced).
+const DEFAULT_GOALS = {
   calories: 2000,
   protein: 150,  // keep high on a cut to hold onto muscle
   carbs: 215,
   fat: 60,
+  water: 66,     // oz/day
+  weight: 150,   // lbs target
 };
 
+function getGoals() {
+  return { ...DEFAULT_GOALS, ...(state.goals || {}) };
+}
+
 function renderDietGoals(totals) {
-  const goals = DIET_GOALS;
+  const goals = getGoals();
   const items = [
     { key: 'calories', label: 'Calories', unit: '', current: Math.round(totals.calories), goal: goals.calories, color: 'var(--accent)' },
     { key: 'protein', label: 'Protein', unit: 'g', current: Math.round(totals.protein), goal: goals.protein, color: '#6366f1' },
@@ -1265,9 +1272,10 @@ const CUT_RECOMMENDATIONS = [
 ];
 
 function renderDietRecs(totals) {
+  const recGoals = getGoals();
   const remaining = {
-    calories: Math.max(0, DIET_GOALS.calories - Math.round(totals.calories)),
-    protein: Math.max(0, DIET_GOALS.protein - Math.round(totals.protein)),
+    calories: Math.max(0, recGoals.calories - Math.round(totals.calories)),
+    protein: Math.max(0, recGoals.protein - Math.round(totals.protein)),
   };
 
   // On a cut, hitting the budget means the kitchen is closed
@@ -1330,14 +1338,13 @@ function renderDietRecs(totals) {
 }
 
 // ========== Water Tracker ==========
-const WATER_GOAL_OZ = 66; // ~half body weight in oz for 132 lbs
-
 function renderWater() {
+  const waterGoal = getGoals().water;
   const entries = state.water[dietViewDate] || [];
   const total = entries.reduce((s, v) => s + v, 0);
-  const pct = Math.min(100, Math.round((total / WATER_GOAL_OZ) * 100));
+  const pct = Math.min(100, Math.round((total / waterGoal) * 100));
 
-  $('#waterProgress').textContent = `${total} / ${WATER_GOAL_OZ} oz`;
+  $('#waterProgress').textContent = `${total} / ${waterGoal} oz`;
   $('#waterBarFill').style.width = pct + '%';
 
   // Color the bar based on progress
@@ -1366,6 +1373,52 @@ function undoWater() {
   state.water[dietViewDate].pop();
   saveData(state);
   renderWater();
+}
+
+// ========== Goals Modal ==========
+function openGoalsModal() {
+  const g = getGoals();
+  $('#goalCalories').value = g.calories;
+  $('#goalProtein').value = g.protein;
+  $('#goalCarbs').value = g.carbs;
+  $('#goalFat').value = g.fat;
+  $('#goalWater').value = g.water;
+  $('#goalWeight').value = g.weight;
+  $('#goalsModal').classList.add('active');
+}
+
+function closeGoalsModal() {
+  $('#goalsModal').classList.remove('active');
+}
+
+function bindGoalsEvents() {
+  $('#editGoalsBtn').addEventListener('click', openGoalsModal);
+  const weightChip = $('#weightGoalChip');
+  if (weightChip) weightChip.addEventListener('click', openGoalsModal);
+  $('#goalsModalClose').addEventListener('click', closeGoalsModal);
+  $('#goalsCancelBtn').addEventListener('click', closeGoalsModal);
+  $('#goalsModal').addEventListener('click', (e) => {
+    if (e.target === $('#goalsModal')) closeGoalsModal();
+  });
+  $('#goalsSaveBtn').addEventListener('click', () => {
+    const read = (id, fallback) => {
+      const v = Number($(id).value);
+      return v > 0 ? v : fallback;
+    };
+    const prev = getGoals();
+    state.goals = {
+      calories: read('#goalCalories', prev.calories),
+      protein: read('#goalProtein', prev.protein),
+      carbs: read('#goalCarbs', prev.carbs),
+      fat: read('#goalFat', prev.fat),
+      water: read('#goalWater', prev.water),
+      weight: read('#goalWeight', prev.weight),
+    };
+    saveData(state);
+    closeGoalsModal();
+    if (typeof render === 'function') render();
+    showToast('Goals updated');
+  });
 }
 
 function bindWaterEvents() {

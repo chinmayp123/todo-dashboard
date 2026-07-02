@@ -3994,6 +3994,55 @@ button:not(:disabled):active {
   background: var(--red-bg);
 }
 
+/* ---- Goals modal & edit button ---- */
+.diet-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goals-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.goals-edit-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+  background: var(--accent-glow);
+}
+
+.goals-modal {
+  width: 460px;
+}
+
+.goals-form {
+  padding: 20px 28px 24px;
+}
+
+.goals-form .form-row {
+  margin-bottom: 4px;
+}
+
+.weight-goal-chip {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.weight-goal-chip:hover {
+  background: rgba(109, 106, 248, 0.28);
+}
+
 /* ---- Diet history: over/under budget at a glance ---- */
 .diet-history-cal.under-budget { color: var(--green); }
 .diet-history-cal.over-budget { color: var(--red); }

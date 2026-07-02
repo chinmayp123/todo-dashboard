@@ -31,11 +31,10 @@ function isBodyweightExercise(name) {
   return false;
 }
 
-const WEIGHT_GOAL = 150; // lbs target — currently cutting from ~160
-
 function renderWeight() {
   const currentEl = $('#weightCurrent');
   if (!currentEl) return;
+  const WEIGHT_GOAL = (typeof getGoals === 'function' && getGoals().weight) || 150;
   const log = state.weight || {};
   const entries = Object.entries(log).sort((a, b) => a[0].localeCompare(b[0]));
   const input = $('#weightInput');
