@@ -621,11 +621,28 @@ function renderDiet() {
     recentFoodsOpen = { breakfast: false, lunch: false, dinner: false, snack: false, [nowMeal]: true };
   }
 
-  if (!recentFoods.length) {
+  // Full food bank — every banked dish (your South Indian pool + saved brands), A→Z
+  const bankEntries = Object.entries(state.customFoods).sort((a, b) => a[0].localeCompare(b[0]));
+
+  if (!recentFoods.length && !bankEntries.length) {
     $('#dietCustomList').innerHTML = '<div class="empty-state"><p>Foods you log will show up here for quick re-adding</p></div>';
   } else {
     const chevron = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg>';
-    $('#dietCustomList').innerHTML = RECENT_MEALS.filter(m => recentGroups[m].length).map(meal => `
+    const foodItem = (name, per, attrs) => `
+      <div class="diet-custom-item" ${attrs}>
+        <div class="diet-custom-item-main">
+          <span class="diet-custom-item-name">${esc(name)}</span>
+          <button class="diet-custom-del" data-del-name="${esc(name)}" title="Remove from the food bank">&times;</button>
+        </div>
+        <div class="diet-custom-item-macros">
+          <span>${Math.round(per.calories)} cal</span>
+          <span>${per.protein}g P</span>
+          <span>${per.carbs}g C</span>
+          <span>${per.fat}g F</span>
+        </div>
+      </div>`;
+
+    const groupsHtml = RECENT_MEALS.filter(m => recentGroups[m].length).map(meal => `
       <div class="recent-meal ${recentFoodsOpen[meal] ? 'open' : ''}" data-recent-meal="${meal}">
         <div class="recent-meal-header">
           <span class="recent-meal-chevron">${chevron}</span>
@@ -633,23 +650,24 @@ function renderDiet() {
           <span class="recent-meal-count">${recentGroups[meal].length}</span>
         </div>
         <div class="recent-meal-body">
-          ${recentGroups[meal].map(f => `
-            <div class="diet-custom-item" data-recent-idx="${f.idx}">
-              <div class="diet-custom-item-main">
-                <span class="diet-custom-item-name">${esc(f.name)}</span>
-                <button class="diet-custom-del" data-recent-del="${f.idx}" title="Remove from Recent Foods and the food bank">&times;</button>
-              </div>
-              <div class="diet-custom-item-macros">
-                <span>${Math.round(f.per.calories)} cal</span>
-                <span>${f.per.protein}g P</span>
-                <span>${f.per.carbs}g C</span>
-                <span>${f.per.fat}g F</span>
-              </div>
-            </div>
-          `).join('')}
+          ${recentGroups[meal].map(f => foodItem(f.name, f.per, `data-recent-idx="${f.idx}"`)).join('')}
         </div>
       </div>
     `).join('');
+
+    const bankHtml = bankEntries.length ? `
+      <div class="recent-meal recent-bank ${recentFoodsOpen.bank ? 'open' : ''}" data-recent-meal="bank">
+        <div class="recent-meal-header">
+          <span class="recent-meal-chevron">${chevron}</span>
+          <span class="recent-meal-label">My Food Bank</span>
+          <span class="recent-meal-count">${bankEntries.length}</span>
+        </div>
+        <div class="recent-meal-body">
+          ${bankEntries.map(([name, data]) => foodItem(name, data, `data-bank-name="${esc(name)}"`)).join('')}
+        </div>
+      </div>` : '';
+
+    $('#dietCustomList').innerHTML = groupsHtml + bankHtml;
 
     // Toggle sections without a full re-render (keeps it snappy)
     $$('.recent-meal-header').forEach(header => {
@@ -663,28 +681,33 @@ function renderDiet() {
 
     $$('.diet-custom-del').forEach(btn => {
       btn.addEventListener('click', () => {
-        const f = recentFoods[Number(btn.dataset.recentDel)];
-        if (!f) return;
-        const lower = f.name.toLowerCase();
+        const name = btn.dataset.delName;
+        if (!name) return;
+        const lower = name.toLowerCase();
         state.removedFoods = state.removedFoods || [];
         if (!state.removedFoods.includes(lower)) state.removedFoods.push(lower);
-        // Also drop any case-variant from the food bank
+        // Drop any case-variant from the food bank
         for (const k of Object.keys(state.customFoods)) {
           if (k.toLowerCase() === lower) delete state.customFoods[k];
         }
         saveData(state);
         renderDiet();
-        showToast(`${f.name} removed — it won't be auto-added again`);
+        showToast(`${name} removed — it won't be auto-added again`);
       });
     });
 
     $$('.diet-custom-item').forEach(el => {
       el.addEventListener('click', (e) => {
         if (e.target.closest('.diet-custom-del')) return;
-        const f = recentFoods[Number(el.dataset.recentIdx)];
-        if (!f) return;
-        selectFoodFromDropdown(f.name, f.per);
-        if (f.meal) $('#dietMeal').value = f.meal;
+        if (el.dataset.recentIdx !== undefined) {
+          const f = recentFoods[Number(el.dataset.recentIdx)];
+          if (!f) return;
+          selectFoodFromDropdown(f.name, f.per);
+          if (f.meal) $('#dietMeal').value = f.meal;
+        } else if (el.dataset.bankName) {
+          const data = state.customFoods[el.dataset.bankName];
+          if (data) selectFoodFromDropdown(el.dataset.bankName, data);
+        }
       });
     });
   }
