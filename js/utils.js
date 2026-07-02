@@ -29,6 +29,45 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// Animate a numeric element from its current value to a target (count-up/down)
+function animateNumber(el, target) {
+  if (!el) return;
+  target = Math.round(Number(target) || 0);
+  const from = parseInt(el.textContent, 10) || 0;
+  if (from === target) { el.textContent = target; return; }
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = target;
+    return;
+  }
+  const duration = 500;
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (target - from) * eased);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// Lightweight toast notification (bottom-right, auto-dismisses)
+function showToast(message) {
+  let host = document.getElementById('toastHost');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'toastHost';
+    document.body.appendChild(host);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  host.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('toast-out');
+    setTimeout(() => toast.remove(), 300);
+  }, 2600);
+}
+
 // ========== US Holidays ==========
 function getUSHolidays(year) {
   const holidays = [];

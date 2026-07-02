@@ -42,10 +42,10 @@ function renderDashboard() {
   const completed = tasks.filter(t => t.status === 'done').length;
   const overdue = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
 
-  $('#totalTasks').textContent = total;
-  $('#inProgressTasks').textContent = inProgress;
-  $('#completedTasks').textContent = completed;
-  $('#overdueTasks').textContent = overdue;
+  animateNumber($('#totalTasks'), total);
+  animateNumber($('#inProgressTasks'), inProgress);
+  animateNumber($('#completedTasks'), completed);
+  animateNumber($('#overdueTasks'), overdue);
 
   renderReminders(today);
   renderMyTasksBoard(tasks);
@@ -378,7 +378,7 @@ function renderReminders(today) {
         color: 'var(--red)',
         bg: 'var(--red-bg)',
         text: `No workout in ${daysSinceGym} days`,
-        sub: 'Time to hit the gym! Consistency is key for gaining.',
+        sub: 'Time to hit the gym! Consistency is what drops the weight.',
         action: `<button class="reminder-nav-btn" data-view="gym">Log Workout</button>`,
       });
     } else if (hour >= 8) {
@@ -420,39 +420,50 @@ function renderReminders(today) {
     }
   }
 
-  // --- Calorie reminder ---
+  // --- Calorie reminder (cutting: over budget is the danger) ---
   const dietToday = state.diet.filter(e => e.date === today);
   const calToday = dietToday.reduce((s, e) => s + (e.calories || 0), 0);
-  const calGoal = 2900;
-  if (hour >= 12 && calToday < calGoal * 0.4) {
+  const calGoal = (typeof DIET_GOALS !== 'undefined' && DIET_GOALS.calories) || 2000;
+  const foodIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>';
+  if (calToday > calGoal) {
     reminders.push({
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',
+      icon: foodIcon,
+      color: 'var(--red)',
+      bg: 'var(--red-bg)',
+      text: `Over budget: ${Math.round(calToday)} / ${calGoal} cal`,
+      sub: `${Math.round(calToday - calGoal)} cal over — keep the rest of the day light, maybe a walk.`,
+      action: `<button class="reminder-nav-btn" data-view="diet">View Diet</button>`,
+    });
+  } else if (calToday > calGoal * 0.85 && hour < 18) {
+    reminders.push({
+      icon: foodIcon,
+      color: 'var(--yellow)',
+      bg: 'var(--yellow-bg)',
+      text: `${Math.round(calGoal - calToday)} cal left for the day`,
+      sub: `Budget is nearly used — plan a light dinner (soup, salad, grilled protein).`,
+      action: `<button class="reminder-nav-btn" data-view="diet">Log Food</button>`,
+    });
+  } else if (hour >= 12 && calToday < calGoal * 0.2) {
+    reminders.push({
+      icon: foodIcon,
       color: 'var(--yellow)',
       bg: 'var(--yellow-bg)',
       text: `Only ${Math.round(calToday)} / ${calGoal} cal logged`,
-      sub: `You need ${calGoal - Math.round(calToday)} more calories to hit your gain goal.`,
-      action: `<button class="reminder-nav-btn" data-view="diet">Log Food</button>`,
-    });
-  } else if (hour >= 18 && calToday < calGoal * 0.7) {
-    reminders.push({
-      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',
-      color: 'var(--red)',
-      bg: 'var(--red-bg)',
-      text: `Behind on calories: ${Math.round(calToday)} / ${calGoal}`,
-      sub: `Evening already — eat a big meal or high-cal snack!`,
+      sub: `Don't forget to log your meals — skipping logs hides overeating.`,
       action: `<button class="reminder-nav-btn" data-view="diet">Log Food</button>`,
     });
   }
 
-  // --- Protein reminder ---
+  // --- Protein reminder (extra important on a cut — protects muscle) ---
   const proteinToday = dietToday.reduce((s, e) => s + (e.protein || 0), 0);
+  const proteinGoal = (typeof DIET_GOALS !== 'undefined' && DIET_GOALS.protein) || 150;
   if (hour >= 14 && proteinToday < 50) {
     reminders.push({
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
       color: '#6366f1',
       bg: 'rgba(99, 102, 241, 0.1)',
-      text: `Low protein: ${Math.round(proteinToday)}g / 150g`,
-      sub: 'Have chicken, eggs, or a protein shake!',
+      text: `Low protein: ${Math.round(proteinToday)}g / ${proteinGoal}g`,
+      sub: 'Protein keeps muscle while you cut — chicken, eggs, or a shake.',
       action: `<button class="reminder-nav-btn" data-view="diet">Log Food</button>`,
     });
   }

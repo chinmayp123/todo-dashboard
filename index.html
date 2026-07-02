@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LifeStack Dashboard</title>
+  <title>Daylign</title>
+  <meta name="theme-color" content="#0b0b10">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236d6af8'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath d='M9 17a7 7 0 0 1 14 0z' fill='white'/%3E%3Crect x='8' y='20' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='11' y='25' width='10' height='3' rx='1.5' fill='white' opacity='0.55'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,12 +18,12 @@
       <div class="logo">
         <div class="logo-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="4" width="18" height="4" rx="1.5" fill="white" opacity="1"/>
-            <rect x="3" y="10" width="14" height="4" rx="1.5" fill="white" opacity="0.7"/>
-            <rect x="3" y="16" width="10" height="4" rx="1.5" fill="white" opacity="0.45"/>
+            <path d="M5 13a7 7 0 0 1 14 0z" fill="white"/>
+            <rect x="4" y="15.5" width="16" height="2.6" rx="1.3" fill="white"/>
+            <rect x="7" y="20" width="10" height="2.6" rx="1.3" fill="white" opacity="0.55"/>
           </svg>
         </div>
-        <span>LifeStack</span>
+        <span>Daylign</span>
       </div>
       <nav class="nav">
         <button class="nav-btn active" data-view="dashboard">
@@ -262,6 +267,22 @@
           <input type="date" id="gymDate" class="gym-date-input">
         </div>
 
+        <!-- Body Weight -->
+        <div class="card weight-card">
+          <div class="weight-head">
+            <h2>Body Weight</h2>
+            <span class="weight-goal-chip" id="weightGoalChip"></span>
+          </div>
+          <div class="weight-row">
+            <div class="weight-current" id="weightCurrent"></div>
+            <div class="weight-spark" id="weightSpark"></div>
+            <div class="weight-log-form">
+              <input type="number" id="weightInput" placeholder="lbs" step="0.1" min="50" max="500">
+              <button class="btn-primary weight-log-btn" id="weightLogBtn">Log</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Stats Row -->
         <div class="gym-stats" id="gymStats"></div>
 
@@ -382,9 +403,9 @@
 
           <!-- My Foods + Diet History -->
           <div class="card diet-history-card">
-            <h2>My Foods</h2>
+            <h2>Recent Foods</h2>
             <div class="diet-custom-list" id="dietCustomList">
-              <div class="empty-state"><p>No custom foods saved</p></div>
+              <div class="empty-state"><p>Foods you log will show up here for quick re-adding</p></div>
             </div>
             <h2 class="diet-history-title">Diet History</h2>
             <div class="diet-history-list" id="dietHistoryList">

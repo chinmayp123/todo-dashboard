@@ -279,7 +279,7 @@ function exportBackup() {
   const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const a = document.createElement('a');
   a.href = url;
-  a.download = `lifestack-backup-${stamp}.json`;
+  a.download = `daylign-backup-${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

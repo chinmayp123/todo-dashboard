@@ -31,6 +31,8 @@ function loadData() {
   const water = localStorage.getItem('tf_water');
   const projects = localStorage.getItem('tf_projects');
   const events = localStorage.getItem('tf_events');
+  const removedFoods = localStorage.getItem('tf_removed_foods');
+  const weight = localStorage.getItem('tf_weight');
   return {
     tasks: tasks ? JSON.parse(tasks) : [...SAMPLE_TASKS],
     categories: categories ? JSON.parse(categories) : [...DEFAULT_CATEGORIES],
@@ -40,6 +42,8 @@ function loadData() {
     customFoods: customFoods ? JSON.parse(customFoods) : {},
     water: water ? JSON.parse(water) : {},
     events: events ? JSON.parse(events) : [],
+    removedFoods: removedFoods ? JSON.parse(removedFoods) : [],
+    weight: weight ? JSON.parse(weight) : {},
   };
 }
 
@@ -52,6 +56,8 @@ function saveData(data) {
   localStorage.setItem('tf_water', JSON.stringify(data.water));
   localStorage.setItem('tf_projects', JSON.stringify(data.projects));
   localStorage.setItem('tf_events', JSON.stringify(data.events));
+  localStorage.setItem('tf_removed_foods', JSON.stringify(data.removedFoods || []));
+  localStorage.setItem('tf_weight', JSON.stringify(data.weight || {}));
   localStorage.setItem('tf_last_updated', Date.now().toString());
   // Sync to Firebase
   saveToFirebase(data);
@@ -66,6 +72,8 @@ function applyFirebaseData(data) {
   state.customFoods = data.customFoods || {};
   state.water = data.water || {};
   state.events = data.events || [];
+  state.removedFoods = data.removedFoods || [];
+  state.weight = data.weight || {};
   // Cache locally
   localStorage.setItem('tf_tasks', JSON.stringify(state.tasks));
   localStorage.setItem('tf_categories', JSON.stringify(state.categories));
@@ -75,6 +83,8 @@ function applyFirebaseData(data) {
   localStorage.setItem('tf_water', JSON.stringify(state.water));
   localStorage.setItem('tf_projects', JSON.stringify(state.projects));
   localStorage.setItem('tf_events', JSON.stringify(state.events));
+  localStorage.setItem('tf_removed_foods', JSON.stringify(state.removedFoods));
+  localStorage.setItem('tf_weight', JSON.stringify(state.weight));
   localStorage.setItem('tf_last_updated', (data.lastUpdated || Date.now()).toString());
   // Re-render the app after a tick to let DOM settle
   if (typeof render === 'function') {

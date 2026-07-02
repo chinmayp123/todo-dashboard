@@ -1,6 +1,8 @@
-# LifeStack
+# Daylign
 
-A personal productivity dashboard that brings your tasks, workouts, nutrition, and schedule into one place. Built with vanilla HTML, CSS, and JavaScript — no frameworks, no dependencies.
+*(formerly LifeStack)*
+
+A personal productivity dashboard that aligns your day — tasks, workouts, nutrition, and schedule in one place. Built with vanilla HTML, CSS, and JavaScript — no frameworks, no dependencies.
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
 

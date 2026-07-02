@@ -61,6 +61,8 @@ function saveToFirebase(data) {
     customFoods: data.customFoods || {},
     water: data.water || {},
     events: data.events || [],
+    removedFoods: data.removedFoods || [],
+    weight: data.weight || {},
     lastUpdated: Date.now(),
   })
     .then(() => setSyncStatus('synced'))

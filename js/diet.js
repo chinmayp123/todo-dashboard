@@ -477,9 +477,23 @@ const FOOD_DATABASE = {
   'filter coffee': { calories: 75, protein: 2, carbs: 8, fat: 3.5, serving: '1 cup with milk', fiber: 0, sugar: 7 },
 };
 
+let dietBackfillNotified = false;
+let recentFoodsOpen = null; // per-meal open/collapsed state, survives re-renders
+
 function renderDiet() {
   const dateInput = $('#dietDate');
   if (!dateInput) return;
+
+  // Bank any dishes from the log that aren't in the food bank yet
+  // (history from before auto-remember, or entries synced from other devices)
+  const backfilled = backfillRememberedFoods();
+  if (backfilled > 0) {
+    saveData(state);
+    if (!dietBackfillNotified) {
+      dietBackfillNotified = true;
+      showToast(`Added ${backfilled} dish${backfilled === 1 ? '' : 'es'} from your log to My Foods`);
+    }
+  }
   // Ensure dietViewDate is set
   if (!dietViewDate) dietViewDate = getTodayStr();
   dateInput.value = dietViewDate;
@@ -566,40 +580,111 @@ function renderDiet() {
     });
   });
 
-  // My Foods list
-  const customEntries = Object.entries(state.customFoods);
-  if (!customEntries.length) {
-    $('#dietCustomList').innerHTML = '<div class="empty-state"><p>No custom foods saved</p></div>';
+  // Recent Foods — unique dishes per meal, newest first, tap to re-log.
+  // Grouped into collapsible time-of-day sections; the bank keeps powering search.
+  const RECENT_MEALS = ['breakfast', 'lunch', 'dinner', 'snack'];
+  const RECENT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+  const PER_MEAL_LIMIT = 6;
+  const recentGroups = { breakfast: [], lunch: [], dinner: [], snack: [] };
+  const recentSeen = { breakfast: new Set(), lunch: new Set(), dinner: new Set(), snack: new Set() };
+  const recentFoods = []; // flat list so click/delete handlers can index into it
+
+  for (let i = state.diet.length - 1; i >= 0; i--) {
+    const e = state.diet[i];
+    const name = (e.food || '').trim();
+    if (!name) continue;
+    const meal = RECENT_MEALS.includes(e.meal) ? e.meal : 'snack';
+    if (recentGroups[meal].length >= PER_MEAL_LIMIT) continue;
+    const lower = name.toLowerCase();
+    if (recentSeen[meal].has(lower) || isRemovedFood(lower)) continue;
+    recentSeen[meal].add(lower);
+    // Per-serving macros from the bank when available, else derived from the entry
+    const bankedEntry = Object.entries(state.customFoods).find(([k]) => k.toLowerCase() === lower);
+    const banked = (bankedEntry && bankedEntry[1]) || FOOD_DATABASE[lower];
+    const n = Number(e.servings) > 0 ? Number(e.servings) : 1;
+    const per = banked || {
+      calories: Math.round((e.calories || 0) / n),
+      protein: Math.round(((e.protein || 0) / n) * 10) / 10,
+      carbs: Math.round(((e.carbs || 0) / n) * 10) / 10,
+      fat: Math.round(((e.fat || 0) / n) * 10) / 10,
+      serving: '1 serving',
+    };
+    const item = { name, meal, per, idx: recentFoods.length };
+    recentFoods.push(item);
+    recentGroups[meal].push(item);
+  }
+
+  // First render: open the meal that matches the time of day, collapse the rest
+  if (!recentFoodsOpen) {
+    const hour = new Date().getHours();
+    const nowMeal = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : hour < 22 ? 'dinner' : 'snack';
+    recentFoodsOpen = { breakfast: false, lunch: false, dinner: false, snack: false, [nowMeal]: true };
+  }
+
+  if (!recentFoods.length) {
+    $('#dietCustomList').innerHTML = '<div class="empty-state"><p>Foods you log will show up here for quick re-adding</p></div>';
   } else {
-    $('#dietCustomList').innerHTML = customEntries.map(([name, data]) => `
-      <div class="diet-custom-item">
-        <div class="diet-custom-item-main">
-          <span class="diet-custom-item-name">${esc(name)}</span>
-          <button class="diet-custom-del" data-custom-name="${esc(name)}">&times;</button>
+    const chevron = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg>';
+    $('#dietCustomList').innerHTML = RECENT_MEALS.filter(m => recentGroups[m].length).map(meal => `
+      <div class="recent-meal ${recentFoodsOpen[meal] ? 'open' : ''}" data-recent-meal="${meal}">
+        <div class="recent-meal-header">
+          <span class="recent-meal-chevron">${chevron}</span>
+          <span class="recent-meal-label">${RECENT_LABELS[meal]}</span>
+          <span class="recent-meal-count">${recentGroups[meal].length}</span>
         </div>
-        <div class="diet-custom-item-macros">
-          <span>${data.calories} cal</span>
-          <span>${data.protein}g P</span>
-          <span>${data.carbs}g C</span>
-          <span>${data.fat}g F</span>
+        <div class="recent-meal-body">
+          ${recentGroups[meal].map(f => `
+            <div class="diet-custom-item" data-recent-idx="${f.idx}">
+              <div class="diet-custom-item-main">
+                <span class="diet-custom-item-name">${esc(f.name)}</span>
+                <button class="diet-custom-del" data-recent-del="${f.idx}" title="Remove from Recent Foods and the food bank">&times;</button>
+              </div>
+              <div class="diet-custom-item-macros">
+                <span>${Math.round(f.per.calories)} cal</span>
+                <span>${f.per.protein}g P</span>
+                <span>${f.per.carbs}g C</span>
+                <span>${f.per.fat}g F</span>
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
     `).join('');
 
+    // Toggle sections without a full re-render (keeps it snappy)
+    $$('.recent-meal-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const group = header.closest('.recent-meal');
+        const meal = group.dataset.recentMeal;
+        recentFoodsOpen[meal] = !recentFoodsOpen[meal];
+        group.classList.toggle('open', recentFoodsOpen[meal]);
+      });
+    });
+
     $$('.diet-custom-del').forEach(btn => {
       btn.addEventListener('click', () => {
-        delete state.customFoods[btn.dataset.customName];
+        const f = recentFoods[Number(btn.dataset.recentDel)];
+        if (!f) return;
+        const lower = f.name.toLowerCase();
+        state.removedFoods = state.removedFoods || [];
+        if (!state.removedFoods.includes(lower)) state.removedFoods.push(lower);
+        // Also drop any case-variant from the food bank
+        for (const k of Object.keys(state.customFoods)) {
+          if (k.toLowerCase() === lower) delete state.customFoods[k];
+        }
         saveData(state);
         renderDiet();
+        showToast(`${f.name} removed — it won't be auto-added again`);
       });
     });
 
     $$('.diet-custom-item').forEach(el => {
       el.addEventListener('click', (e) => {
         if (e.target.closest('.diet-custom-del')) return;
-        const name = el.querySelector('.diet-custom-item-name').textContent;
-        const data = state.customFoods[name];
-        if (data) selectFoodFromDropdown(name, data);
+        const f = recentFoods[Number(el.dataset.recentIdx)];
+        if (!f) return;
+        selectFoodFromDropdown(f.name, f.per);
+        if (f.meal) $('#dietMeal').value = f.meal;
       });
     });
   }
@@ -692,18 +777,26 @@ function selectFoodFromDropdown(name, data) {
 
 // Auto-add a logged food to the searchable food database (My Foods) if it's new.
 // Stores PER-SERVING macros so quantities scale correctly next time.
+// Foods the user explicitly deleted — never auto-add these again
+function isRemovedFood(name) {
+  return (state.removedFoods || []).includes((name || '').trim().toLowerCase());
+}
+
 function rememberFood(name, totals, servings) {
   const key = (name || '').trim();
-  if (!key) return;
+  if (!key) return false;
   const lower = key.toLowerCase();
+  // User deleted this food before — respect that.
+  if (isRemovedFood(lower)) return false;
   // Already a built-in food? Nothing to remember.
-  if (FOOD_DATABASE[lower]) return;
+  if (FOOD_DATABASE[lower]) return false;
   // Already saved (case-insensitive)? Don't duplicate or overwrite.
-  if (Object.keys(state.customFoods).some(k => k.toLowerCase() === lower)) return;
+  if (Object.keys(state.customFoods).some(k => k.toLowerCase() === lower)) return false;
   // No macros worth saving.
-  if (!totals.calories) return;
+  if (!totals.calories) return false;
 
-  const n = Math.max(1, Number(servings) || 1);
+  // Fractional servings (0.5x chutney) must divide correctly — never round up to 1
+  const n = Number(servings) > 0 ? Number(servings) : 1;
   // Prefer per-serving macros captured when picking from a dropdown; otherwise
   // derive them from the entered totals divided by servings.
   const per = dietBaseMacros ? dietBaseMacros : {
@@ -727,6 +820,36 @@ function rememberFood(name, totals, servings) {
     fiber: 0,
     sugar: 0,
   };
+  return true;
+}
+
+// Sweep the whole diet log and bank any dish that isn't searchable yet.
+// Catches foods logged before auto-remember existed and entries synced in
+// from other devices. Iterates newest-first so the latest macros win.
+function backfillRememberedFoods() {
+  let added = 0;
+  const seen = new Set(Object.keys(state.customFoods).map(k => k.toLowerCase()));
+  for (let i = state.diet.length - 1; i >= 0; i--) {
+    const e = state.diet[i];
+    const key = (e.food || '').trim();
+    if (!key) continue;
+    const lower = key.toLowerCase();
+    if (FOOD_DATABASE[lower] || seen.has(lower) || isRemovedFood(lower)) continue;
+    if (!e.calories) continue;
+    const n = Number(e.servings) > 0 ? Number(e.servings) : 1;
+    state.customFoods[key] = {
+      calories: Math.round(e.calories / n),
+      protein: Math.round(((e.protein || 0) / n) * 10) / 10,
+      carbs: Math.round(((e.carbs || 0) / n) * 10) / 10,
+      fat: Math.round(((e.fat || 0) / n) * 10) / 10,
+      serving: '1 serving',
+      fiber: 0,
+      sugar: 0,
+    };
+    seen.add(lower);
+    added++;
+  }
+  return added;
 }
 
 function updateMacrosByServings() {
@@ -1008,7 +1131,9 @@ function bindDietEvents() {
       fat,
     });
     // Auto-remember any new food so it shows up in search next time
-    rememberFood(food, { calories, protein, carbs, fat }, servings);
+    if (rememberFood(food, { calories, protein, carbs, fat }, servings)) {
+      showToast(`✓ ${food} saved to My Foods`);
+    }
     saveData(state);
     clearDietForm();
     renderDiet();
@@ -1020,6 +1145,8 @@ function bindDietEvents() {
     const calories = Number($('#dietCalories').value);
     if (!food) { alert('Enter a food name first.'); return; }
     if (!calories) { alert('Fill in the macros before saving.'); return; }
+    // Explicit save overrides an earlier delete
+    state.removedFoods = (state.removedFoods || []).filter(n => n !== food.toLowerCase());
     const serving = ($('#dietServingInfo').textContent || '').replace(/^Per serving:\s*/i, '').split('·')[0].trim() || '1 serving';
     state.customFoods[food] = {
       calories,
@@ -1037,13 +1164,13 @@ function bindDietEvents() {
 }
 
 // ========== Goal Tracker ==========
-// 25yo male, 5'10", 132 lbs → 150 lbs weight gain
-// BMR ~1608, TDEE ~2490, +400 surplus = ~2900 cal/day
+// 25yo male, 5'10", ~160 lbs → 150 lbs weight LOSS (cut started Jul 2026)
+// BMR ~1720, TDEE ~2500, -500 deficit = ~2000 cal/day (~1 lb/week)
 const DIET_GOALS = {
-  calories: 2900,
-  protein: 150,  // 1g per lb of goal weight
-  carbs: 390,
-  fat: 65,
+  calories: 2000,
+  protein: 150,  // keep high on a cut to hold onto muscle
+  carbs: 215,
+  fat: 60,
 };
 
 function renderDietGoals(totals) {
@@ -1078,37 +1205,38 @@ function renderDietGoals(totals) {
 }
 
 // ========== Food Recommendations ==========
-const GAIN_RECOMMENDATIONS = [
+// Cutting: high protein, high volume, calorie-conscious (South Indian friendly)
+const CUT_RECOMMENDATIONS = [
   { meal: 'Breakfast', foods: [
-    { name: 'Oatmeal + banana + peanut butter', cal: 450, p: 15, desc: '1 cup oats, 1 banana, 2 tbsp PB' },
-    { name: 'Egg dosa with coconut chutney', cal: 350, p: 14, desc: '2 egg dosas + chutney' },
-    { name: '4 eggs + 2 toast + avocado', cal: 520, p: 28, desc: 'Scrambled or fried' },
-    { name: 'Greek yogurt + granola + berries', cal: 380, p: 24, desc: '170g yogurt, 1/2 cup granola' },
-    { name: 'Idli sambar (4 idli)', cal: 320, p: 12, desc: 'With coconut chutney' },
-    { name: 'Protein shake + banana', cal: 340, p: 30, desc: '2 scoops whey + whole milk + banana' },
+    { name: 'Egg white omelette + 1 toast', cal: 250, p: 24, desc: '4 whites + 1 whole egg, veggies' },
+    { name: '2 idli + sambar', cal: 200, p: 8, desc: 'Skip the coconut chutney' },
+    { name: 'Greek yogurt + berries', cal: 180, p: 20, desc: '170g nonfat yogurt' },
+    { name: 'Protein shake + banana', cal: 250, p: 27, desc: '1 scoop whey in water + banana' },
+    { name: 'Moong dal chilla (2)', cal: 220, p: 14, desc: 'Minimal oil, with mint chutney' },
+    { name: '3 boiled eggs', cal: 210, p: 18, desc: 'With black pepper' },
   ]},
   { meal: 'Lunch', foods: [
-    { name: 'Chicken biryani + raita', cal: 650, p: 30, desc: 'Large serving with yogurt' },
-    { name: 'Rice + dal + chicken curry', cal: 700, p: 35, desc: '2 cups rice, 1 cup each' },
-    { name: 'Double chicken breast + brown rice', cal: 580, p: 62, desc: '200g chicken, 1.5 cups rice' },
-    { name: 'Paneer butter masala + 3 roti', cal: 620, p: 24, desc: 'With extra ghee' },
-    { name: 'Salmon + quinoa + vegetables', cal: 550, p: 40, desc: '150g salmon, 1 cup quinoa' },
-    { name: 'Burrito bowl (double rice)', cal: 700, p: 35, desc: 'Rice, beans, chicken, cheese, guac' },
+    { name: 'Chicken breast + 1 cup rice + salad', cal: 450, p: 42, desc: '150g grilled chicken' },
+    { name: 'Rice + pappu charu + veggies', cal: 400, p: 12, desc: '1 cup rice, light on oil' },
+    { name: 'Grilled chicken salad', cal: 380, p: 40, desc: 'Big bowl, light dressing' },
+    { name: 'Dal + 2 phulka (no ghee)', cal: 350, p: 16, desc: 'With cucumber raita' },
+    { name: 'Tandoori chicken + kachumber', cal: 400, p: 45, desc: '2 pieces + onion-cucumber salad' },
+    { name: 'Fish curry + 1 cup rice', cal: 420, p: 30, desc: 'South Indian style, measured rice' },
   ]},
   { meal: 'Dinner', foods: [
-    { name: 'Steak + mashed potatoes', cal: 650, p: 45, desc: '200g steak, large serving potatoes' },
-    { name: 'Chicken thigh curry + rice + dal', cal: 750, p: 38, desc: 'Generous portions' },
-    { name: 'Pasta with ground beef sauce', cal: 680, p: 35, desc: '2 cups pasta, 150g beef' },
-    { name: 'Fish curry + rice + poriyal', cal: 550, p: 32, desc: 'South Indian style plate' },
-    { name: 'Chole + 3 paratha', cal: 650, p: 22, desc: 'With extra butter on paratha' },
+    { name: 'Grilled fish + sauteed veggies', cal: 350, p: 35, desc: '150g fish, minimal oil' },
+    { name: 'Soya chunk curry + 1 cup rice', cal: 400, p: 28, desc: 'Your usual, measured rice' },
+    { name: 'Chicken curry (lean) + 1 roti', cal: 400, p: 32, desc: 'Breast meat, light oil' },
+    { name: 'Paneer bhurji + salad', cal: 350, p: 22, desc: 'Low-fat paneer, no butter' },
+    { name: 'Egg curry (2 eggs) + veggies', cal: 320, p: 16, desc: 'Skip the rice tonight' },
   ]},
   { meal: 'Snacks', foods: [
-    { name: 'Trail mix (1/2 cup)', cal: 350, p: 9, desc: 'Nuts, dried fruit, chocolate' },
-    { name: 'Peanut butter + banana toast', cal: 350, p: 12, desc: '2 slices bread, 2 tbsp PB' },
-    { name: 'Protein shake + oats', cal: 340, p: 30, desc: 'Shake blended with 1/2 cup oats' },
-    { name: 'Mango lassi + almonds', cal: 300, p: 12, desc: '1 glass lassi, 1 oz almonds' },
-    { name: 'Cottage cheese + fruit', cal: 280, p: 30, desc: '1 cup cottage cheese + berries' },
-    { name: 'Handful of cashews + dates', cal: 310, p: 8, desc: '1 oz cashews + 3 dates' },
+    { name: 'Buttermilk (majjiga)', cal: 60, p: 3, desc: '1 glass, spiced' },
+    { name: 'Greek yogurt cup', cal: 100, p: 17, desc: 'Plain nonfat' },
+    { name: 'Roasted chana (1/4 cup)', cal: 120, p: 7, desc: 'Crunchy, filling' },
+    { name: 'Protein shake in water', cal: 120, p: 24, desc: '1 scoop whey' },
+    { name: 'Apple + 10 almonds', cal: 170, p: 3, desc: 'Fiber + crunch' },
+    { name: 'Cucumber + hummus', cal: 150, p: 5, desc: '2 tbsp hummus' },
   ]},
 ];
 
@@ -1118,9 +1246,9 @@ function renderDietRecs(totals) {
     protein: Math.max(0, DIET_GOALS.protein - Math.round(totals.protein)),
   };
 
-  // Don't show if goals are met
+  // On a cut, hitting the budget means the kitchen is closed
   if (remaining.calories <= 100) {
-    $('#dietRecs').innerHTML = '<div class="diet-recs-done">You\'ve hit your calorie goal today!</div>';
+    $('#dietRecs').innerHTML = '<div class="diet-recs-done">Calorie budget used up — kitchen\'s closed for today!</div>';
     return;
   }
 
@@ -1130,7 +1258,7 @@ function renderDietRecs(totals) {
 
   // Pick recommendations for unlogged meals, or snacks if all meals logged
   let suggestions = [];
-  for (const group of GAIN_RECOMMENDATIONS) {
+  for (const group of CUT_RECOMMENDATIONS) {
     const mealKey = group.meal.toLowerCase() === 'snacks' ? 'snack' : group.meal.toLowerCase();
     if (!loggedMeals.has(mealKey) || mealKey === 'snack') {
       // Pick 1-2 random foods from this meal
@@ -1140,7 +1268,7 @@ function renderDietRecs(totals) {
   }
 
   if (!suggestions.length) {
-    suggestions = [{ meal: 'Snacks', foods: GAIN_RECOMMENDATIONS[3].foods.slice(0, 2) }];
+    suggestions = [{ meal: 'Snacks', foods: CUT_RECOMMENDATIONS[3].foods.slice(0, 2) }];
   }
 
   const isOpen = $('#dietRecs').classList.contains('open');
