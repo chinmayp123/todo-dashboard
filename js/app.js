@@ -1,5 +1,9 @@
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', () => {
+  // Offline support: network-first SW, so code is always fresh when online
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
   setHeaderDate();
   bindEvents();
   if (currentView !== 'dashboard') {

@@ -65,6 +65,66 @@ function renderHealthStrip(today) {
   });
 }
 
+// Weight trend chart — SVG line of weigh-ins vs the goal line
+function renderWeightTrend() {
+  const host = $('#weightTrendChart');
+  if (!host) return;
+  const goalW = (typeof getGoals === 'function' && getGoals().weight) || 150;
+  const entries = Object.entries(state.weight || {})
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-60); // last 60 weigh-ins is plenty for a trend
+
+  if (entries.length < 2) {
+    $('#weightTrendMeta').textContent = `Goal: ${goalW} lbs`;
+    host.innerHTML = `<div class="empty-state"><p>${entries.length === 1
+      ? `First weigh-in logged (${entries[0][1]} lbs) — one more and the trend line appears`
+      : 'Log weigh-ins in the Gym tab and your trend appears here'}</p></div>`;
+    return;
+  }
+
+  const first = entries[0][1];
+  const latest = entries[entries.length - 1][1];
+  const change = Math.round((latest - first) * 10) / 10;
+  const losing = latest > goalW;
+  const changeGood = losing ? change <= 0 : change >= 0;
+  $('#weightTrendMeta').innerHTML =
+    `<span class="weight-delta ${changeGood ? 'good' : 'bad'}">${change > 0 ? '▲' : change < 0 ? '▼' : '—'} ${Math.abs(change)} lbs</span>
+     <span class="weight-trend-goal">goal ${goalW} lbs</span>`;
+
+  const W = 640, H = 170, PX = 34, PY = 16;
+  const times = entries.map(([d]) => new Date(d + 'T00:00:00').getTime());
+  const weights = entries.map(([, w]) => w);
+  const tMin = times[0], tMax = times[times.length - 1];
+  const yMin = Math.min(...weights, goalW) - 2;
+  const yMax = Math.max(...weights, goalW) + 2;
+  const x = (t) => PX + ((t - tMin) / (tMax - tMin || 1)) * (W - PX * 2);
+  const y = (w) => H - PY - ((w - yMin) / (yMax - yMin || 1)) * (H - PY * 2);
+
+  const pts = entries.map(([d, w], i) => `${Math.round(x(times[i]) * 10) / 10},${Math.round(y(w) * 10) / 10}`);
+  const areaPts = `${PX},${H - PY} ${pts.join(' ')} ${Math.round(x(tMax))},${H - PY}`;
+  const goalY = Math.round(y(goalW) * 10) / 10;
+  const fmtD = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  host.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="weight-trend-svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wtFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="rgba(109,106,248,0.25)"/>
+          <stop offset="1" stop-color="rgba(109,106,248,0)"/>
+        </linearGradient>
+      </defs>
+      <line x1="${PX}" y1="${goalY}" x2="${W - PX}" y2="${goalY}" stroke="var(--purple)" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.7"/>
+      <text x="${W - PX + 4}" y="${goalY + 3.5}" fill="var(--purple)" font-size="10">${goalW}</text>
+      <polygon points="${areaPts}" fill="url(#wtFill)"/>
+      <polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="100" class="weight-spark-line"/>
+      ${entries.map(([, w], i) => `<circle cx="${Math.round(x(times[i]) * 10) / 10}" cy="${Math.round(y(w) * 10) / 10}" r="3" fill="var(--accent-hover)"><title>${w} lbs</title></circle>`).join('')}
+    </svg>
+    <div class="weight-trend-axis">
+      <span>${fmtD(tMin)} · ${first} lbs</span>
+      <span>${fmtD(tMax)} · ${latest} lbs</span>
+    </div>`;
+}
+
 function renderDashboard() {
   renderDashboardProjectFilter();
 
@@ -85,6 +145,7 @@ function renderDashboard() {
   animateNumber($('#overdueTasks'), overdue);
 
   renderHealthStrip(today);
+  renderWeightTrend();
   renderReminders(today);
   renderMyTasksBoard(tasks);
 
