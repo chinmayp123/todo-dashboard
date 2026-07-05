@@ -526,6 +526,9 @@ function renderDiet() {
   // Food recommendations based on remaining macros
   renderDietRecs(totals);
 
+  // End-of-day review: what pushed you over each macro
+  renderDietReview(totals, dayEntries);
+
   // Water tracker
   renderWater();
 
@@ -543,12 +546,23 @@ function renderDiet() {
     $('#dietMealsList').innerHTML = '<div class="empty-state"><p>No food logged</p></div>';
   } else {
     $('#dietMealsList').innerHTML = mealGroups.map(g => {
-      const mealCal = g.entries.reduce((s, e) => s + (e.calories || 0), 0);
+      const mealMacros = g.entries.reduce((s, e) => {
+        s.calories += (e.calories || 0);
+        s.protein += (e.protein || 0);
+        s.carbs += (e.carbs || 0);
+        s.fat += (e.fat || 0);
+        return s;
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
       return `
         <div class="diet-meal-group">
           <div class="diet-meal-header">
             <span class="diet-meal-name">${g.label}</span>
-            <span class="diet-meal-cal">${Math.round(mealCal)} cal</span>
+            <span class="diet-meal-cal">
+              <span class="diet-meal-cal-val">${Math.round(mealMacros.calories)} cal</span>
+              <span class="diet-meal-macro">${Math.round(mealMacros.protein)}g P</span>
+              <span class="diet-meal-macro">${Math.round(mealMacros.carbs)}g C</span>
+              <span class="diet-meal-macro">${Math.round(mealMacros.fat)}g F</span>
+            </span>
           </div>
           ${g.entries.map(e => {
             const idx = state.diet.indexOf(e);
@@ -1247,11 +1261,12 @@ const CUT_RECOMMENDATIONS = [
     { name: '3 boiled eggs', cal: 210, p: 18, desc: 'With black pepper' },
   ]},
   { meal: 'Lunch', foods: [
+    { name: "Auntie's plate: rice + dal + curry + yogurt", cal: 520, p: 20, desc: '1 cup rice, load the dal & yogurt, go light on oily curry' },
+    { name: 'Rice + 2 curries + extra dal + curd', cal: 500, p: 22, desc: 'Cap rice at 1 cup, double the dal for protein' },
+    { name: 'Half rice + dal + curry + big curd', cal: 430, p: 21, desc: 'Swap ½ the rice for more veg curry & yogurt' },
     { name: 'Chicken breast + 1 cup rice + salad', cal: 450, p: 42, desc: '150g grilled chicken' },
     { name: 'Rice + pappu charu + veggies', cal: 400, p: 12, desc: '1 cup rice, light on oil' },
-    { name: 'Grilled chicken salad', cal: 380, p: 40, desc: 'Big bowl, light dressing' },
     { name: 'Dal + 2 phulka (no ghee)', cal: 350, p: 16, desc: 'With cucumber raita' },
-    { name: 'Tandoori chicken + kachumber', cal: 400, p: 45, desc: '2 pieces + onion-cucumber salad' },
     { name: 'Fish curry + 1 cup rice', cal: 420, p: 30, desc: 'South Indian style, measured rice' },
   ]},
   { meal: 'Dinner', foods: [
@@ -1288,10 +1303,35 @@ function renderDietRecs(totals) {
   const dayEntries = state.diet.filter(e => e.date === dietViewDate);
   const loggedMeals = new Set(dayEntries.map(e => e.meal));
 
+  // Group meal name ("Snacks") -> entry meal key ("snack")
+  const keyOf = name => name.toLowerCase() === 'snacks' ? 'snack' : name.toLowerCase();
+
+  // Time-of-day awareness (only when viewing today — a past day has no "now")
+  const isToday = dietViewDate === getTodayStr();
+  const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
+  const mealForHour = h => {
+    if (h >= 4 && h < 11) return 'breakfast';
+    if (h >= 11 && h < 16) return 'lunch';
+    if (h >= 16 && h < 21) return 'dinner';
+    return 'snack';
+  };
+  const nowMeal = isToday ? mealForHour(new Date().getHours()) : null;
+
+  // Starting from the current time window, find the first meal still worth
+  // eating (unlogged real meal, or a snack which is always fair game).
+  let featuredKey = null;
+  if (nowMeal) {
+    const start = MEAL_ORDER.indexOf(nowMeal);
+    for (let i = 0; i < MEAL_ORDER.length; i++) {
+      const k = MEAL_ORDER[(start + i) % MEAL_ORDER.length];
+      if (k === 'snack' || !loggedMeals.has(k)) { featuredKey = k; break; }
+    }
+  }
+
   // Pick recommendations for unlogged meals, or snacks if all meals logged
   let suggestions = [];
   for (const group of CUT_RECOMMENDATIONS) {
-    const mealKey = group.meal.toLowerCase() === 'snacks' ? 'snack' : group.meal.toLowerCase();
+    const mealKey = keyOf(group.meal);
     if (!loggedMeals.has(mealKey) || mealKey === 'snack') {
       // Pick 1-2 random foods from this meal
       const shuffled = [...group.foods].sort(() => Math.random() - 0.5);
@@ -1303,19 +1343,36 @@ function renderDietRecs(totals) {
     suggestions = [{ meal: 'Snacks', foods: CUT_RECOMMENDATIONS[3].foods.slice(0, 2) }];
   }
 
+  // Lead with the time-appropriate meal and flag it as "now"
+  if (featuredKey) {
+    suggestions = [
+      ...suggestions.filter(s => keyOf(s.meal) === featuredKey),
+      ...suggestions.filter(s => keyOf(s.meal) !== featuredKey),
+    ];
+    if (suggestions[0] && keyOf(suggestions[0].meal) === featuredKey) suggestions[0].now = true;
+  }
+
+  // Header context reflects the time of day
+  const DISPLAY = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+  const NOW_LABEL = { breakfast: 'Breakfast time', lunch: 'Lunchtime', dinner: 'Dinner time', snack: 'Snack time' };
+  let contextLabel = 'Suggestions';
+  if (featuredKey) {
+    contextLabel = featuredKey === nowMeal ? NOW_LABEL[nowMeal] : `Up next: ${DISPLAY[featuredKey]}`;
+  }
+
   const isOpen = $('#dietRecs').classList.contains('open');
   $('#dietRecs').innerHTML = `
     <div class="diet-recs-toggle" id="dietRecsToggle">
       <svg class="diet-recs-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none">
         <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span class="diet-recs-title">Suggestions</span>
+      <span class="diet-recs-title">${contextLabel}</span>
       <span class="diet-recs-remaining">${remaining.calories} cal &middot; ${remaining.protein}g protein to go</span>
     </div>
     <div class="diet-recs-body">
       ${suggestions.map(s => `
         <div class="diet-recs-meal">
-          <span class="diet-recs-meal-label">${s.meal}</span>
+          <span class="diet-recs-meal-label">${s.meal}${s.now ? '<span class="diet-recs-now">now</span>' : ''}</span>
           ${s.foods.map(f => `
             <div class="diet-rec-item">
               <div class="diet-rec-name">${f.name}</div>
@@ -1335,6 +1392,93 @@ function renderDietRecs(totals) {
   $('#dietRecsToggle').addEventListener('click', () => {
     $('#dietRecs').classList.toggle('open');
   });
+}
+
+// ========== End-of-day Review ==========
+// Retrospective: for each macro that finished over goal, surface the foods
+// that drove it so you can see exactly where to cut back next time.
+// Protein is intentionally excluded — going over protein isn't a problem on a cut.
+function renderDietReview(totals, dayEntries) {
+  const el = $('#dietReview');
+  if (!el) return;
+
+  // Nothing logged yet → nothing to review
+  if (!dayEntries.length) { el.innerHTML = ''; el.classList.remove('has-content'); return; }
+
+  const goals = getGoals();
+  const LIMITING = [
+    { key: 'calories', label: 'Calories', unit: '', color: 'var(--accent)' },
+    { key: 'carbs', label: 'Carbs', unit: 'g', color: '#eab308' },
+    { key: 'fat', label: 'Fat', unit: 'g', color: '#ef4444' },
+  ];
+
+  const over = LIMITING
+    .map(m => {
+      const current = Math.round(totals[m.key]);
+      return { ...m, current, amount: current - goals[m.key] };
+    })
+    .filter(m => m.amount > 0);
+
+  // Stayed within every limiting macro → a quick win, no culprit list needed
+  if (!over.length) {
+    el.classList.add('has-content');
+    el.innerHTML = `
+      <div class="diet-review-header ok">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        <span class="diet-review-title">Day review</span>
+      </div>
+      <div class="diet-review-clean">Nice — you finished within your calorie, carb, and fat goals.</div>`;
+    return;
+  }
+
+  el.classList.add('has-content');
+
+  const sections = over.map(m => {
+    const total = m.current;
+    // Rank the day's foods by how much of THIS macro they contributed
+    const culprits = dayEntries
+      .map(e => ({ food: e.food, meal: e.meal, val: Math.round(e[m.key] || 0) }))
+      .filter(c => c.val > 0)
+      .sort((a, b) => b.val - a.val)
+      .slice(0, 3);
+
+    const top = culprits[0];
+    let tip = '';
+    if (top) {
+      tip = top.val >= m.amount
+        ? `Skipping <strong>${esc(top.food)}</strong> alone would have kept you under your ${m.label.toLowerCase()} goal.`
+        : `<strong>${esc(top.food)}</strong> was the biggest driver — trimming it claws back ${top.val}${m.unit} of the ${m.amount}${m.unit} overage.`;
+    }
+
+    return `
+      <div class="diet-review-macro">
+        <div class="diet-review-macro-head">
+          <span class="diet-review-dot" style="background:${m.color}"></span>
+          <span class="diet-review-macro-label">${m.label}</span>
+          <span class="diet-review-over">over by ${m.amount}${m.unit}</span>
+        </div>
+        <div class="diet-review-culprits">
+          ${culprits.map(c => {
+            const pct = total > 0 ? Math.round((c.val / total) * 100) : 0;
+            return `
+              <div class="diet-review-culprit">
+                <span class="diet-review-culprit-name">${esc(c.food)}</span>
+                <span class="diet-review-culprit-meal">${c.meal}</span>
+                <span class="diet-review-culprit-val">${c.val}${m.unit} &middot; ${pct}%</span>
+              </div>`;
+          }).join('')}
+        </div>
+        ${tip ? `<div class="diet-review-tip">${tip}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="diet-review-header">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      <span class="diet-review-title">Where you went over</span>
+      <span class="diet-review-sub">${over.length} macro${over.length === 1 ? '' : 's'} above goal</span>
+    </div>
+    ${sections}`;
 }
 
 // ========== Water Tracker ==========
