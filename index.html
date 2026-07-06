@@ -56,6 +56,11 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
           Diet
         </button>
+        <div class="nav-divider"></div>
+        <button class="nav-btn" data-view="settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Settings
+        </button>
       </nav>
       <div class="sidebar-categories">
         <h3>Categories</h3>
@@ -90,9 +95,6 @@
             <span class="sync-dot"></span>
             <span class="sync-text">…</span>
           </div>
-          <button class="btn-secondary" id="exportBtn" title="Download a backup of all your data">Backup</button>
-          <button class="btn-secondary" id="importBtn" title="Restore data from a backup file">Restore</button>
-          <input type="file" id="importFile" accept="application/json,.json" style="display:none">
           <button class="btn-primary" id="addTaskBtn">+ New Task</button>
         </div>
       </header>
@@ -435,6 +437,24 @@
               <div class="empty-state"><p>No diet history</p></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Settings View -->
+      <div class="view" id="settingsView">
+        <div class="settings-wrap">
+          <section class="settings-card">
+            <h2>Backup your data</h2>
+            <p class="settings-desc">Your data syncs to the cloud automatically, but the cloud keeps no history. Download a backup regularly so you always have a copy you control. Save it somewhere safe (Files, iCloud, email).</p>
+            <button class="btn-primary" id="exportBtn">Download backup</button>
+          </section>
+
+          <section class="settings-card settings-danger">
+            <h2>Restore from a backup</h2>
+            <p class="settings-desc"><strong>This replaces everything</strong> — on this device and in the cloud (all your devices) — with the contents of a backup file. Only use it to recover lost data. Restoring an older file will delete anything newer. A safety copy of your current data is downloaded first, and you'll be asked to type <code>RESTORE</code> to confirm.</p>
+            <button class="btn-danger" id="importBtn">Restore from file…</button>
+            <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+          </section>
         </div>
       </div>
     </main>

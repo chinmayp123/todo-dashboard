@@ -17,6 +17,11 @@ const DATA_REF = db.ref('lifestack');
 // Sync state
 let firebaseReady = false;
 let suppressFirebaseWrite = false; // prevent echo when receiving updates
+// True once the initial cloud read has settled (success OR failure). Until then,
+// saves must not advance the sync clock or push — otherwise automatic load-time
+// saves (e.g. auto-banking foods) look "newer" than the cloud and trick the next
+// load into overwriting good cloud data with stale local data.
+let appReconciled = false;
 
 // Update the visible sync indicator in the header.
 // state: 'connecting' | 'saving' | 'synced' | 'error'
@@ -80,27 +85,33 @@ function initFirebaseSync(onDataReceived) {
   DATA_REF.once('value')
     .then(snapshot => {
       firebaseReady = true;
-      setSyncStatus('synced');
       const data = snapshot.val();
-      if (data && data.lastUpdated) {
-        const localTimestamp = parseInt(localStorage.getItem('tf_last_updated') || '0');
-        if (data.lastUpdated > localTimestamp) {
-          // Firebase is newer — use it
-          onDataReceived(data);
-          console.log('Loaded data from Firebase (newer than local)');
-        } else {
-          // Local is newer — push to Firebase
-          console.log('Local data is newer, pushing to Firebase');
-        }
+      const localTimestamp = parseInt(localStorage.getItem('tf_last_updated') || '0');
+      if (data && data.lastUpdated && data.lastUpdated > localTimestamp) {
+        // Cloud is genuinely newer — adopt it (this is the path that pulls back
+        // data another device saved while this one was closed).
+        onDataReceived(data);
+        console.log('Loaded data from Firebase (newer than local)');
       } else {
-        // No Firebase data yet — push local data up
-        console.log('No Firebase data found, uploading local data');
+        // Local is genuinely newer, or the cloud is empty — push local up once.
+        // We only reach "local newer" here because load-time saves no longer
+        // bump the clock, so this comparison is now trustworthy.
+        console.log(data && data.lastUpdated ? 'Local data is newer, pushing to Firebase' : 'No Firebase data found, uploading local data');
+        appReconciled = true; // allow the push below to advance the clock
+        saveToFirebase(state);
       }
+      appReconciled = true;
+      setSyncStatus('synced');
     })
     .catch(err => {
       console.warn('Firebase initial load failed, using localStorage:', err);
-      firebaseReady = true; // still allow writes
-      setSyncStatus('error', 'Could not reach the cloud: ' + (err && err.message ? err.message : 'unknown error') + '. Changes save on this device only — use Backup.');
+      // Could not reach the cloud. Stay LOCAL-ONLY this session rather than risk
+      // pushing a stale blob over newer cloud data when connectivity returns.
+      // appReconciled=true still lets real edits advance the local clock, so they
+      // are recognized as newer and preserved on the next successful load.
+      firebaseReady = false;
+      appReconciled = true;
+      setSyncStatus('error', 'Could not reach the cloud: ' + (err && err.message ? err.message : 'unknown error') + '. Changes save on this device only — reopen when online to sync.');
     });
 
   // Listen for real-time changes from other devices

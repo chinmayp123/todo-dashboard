@@ -22,30 +22,36 @@ const SAMPLE_TASKS = [
   { id: '8', name: 'Read "Atomic Habits"', description: 'Finish remaining 100 pages', priority: 'low', status: 'in-progress', category: 'learning', dueDate: getTodayOffset(10), created: getTodayOffset(-14), subtasks: [] },
 ];
 
+// Parse one localStorage key defensively. A single corrupt/truncated value
+// (partial write, quota failure, aborted sync) must never crash the whole app
+// and make it look like all data is gone — fall back to the default instead.
+function safeParse(key, fallback) {
+  const raw = localStorage.getItem(key);
+  if (raw === null || raw === undefined) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn(`Corrupt localStorage key "${key}" — keeping a copy and using the default.`, e);
+    // Preserve the bad blob so it can be recovered/inspected instead of being
+    // silently overwritten by the next save.
+    try { localStorage.setItem(key + '_corrupt_backup', raw); } catch (_) {}
+    return fallback;
+  }
+}
+
 function loadData() {
-  const tasks = localStorage.getItem('tf_tasks');
-  const categories = localStorage.getItem('tf_categories');
-  const gymLog = localStorage.getItem('tf_gym');
-  const dietLog = localStorage.getItem('tf_diet');
-  const customFoods = localStorage.getItem('tf_custom_foods');
-  const water = localStorage.getItem('tf_water');
-  const projects = localStorage.getItem('tf_projects');
-  const events = localStorage.getItem('tf_events');
-  const removedFoods = localStorage.getItem('tf_removed_foods');
-  const weight = localStorage.getItem('tf_weight');
-  const goals = localStorage.getItem('tf_goals');
   return {
-    tasks: tasks ? JSON.parse(tasks) : [...SAMPLE_TASKS],
-    categories: categories ? JSON.parse(categories) : [...DEFAULT_CATEGORIES],
-    projects: projects ? JSON.parse(projects) : [...DEFAULT_PROJECTS],
-    gym: gymLog ? JSON.parse(gymLog) : [],
-    diet: dietLog ? JSON.parse(dietLog) : [],
-    customFoods: customFoods ? JSON.parse(customFoods) : {},
-    water: water ? JSON.parse(water) : {},
-    events: events ? JSON.parse(events) : [],
-    removedFoods: removedFoods ? JSON.parse(removedFoods) : [],
-    weight: weight ? JSON.parse(weight) : {},
-    goals: goals ? JSON.parse(goals) : {},
+    tasks: safeParse('tf_tasks', [...SAMPLE_TASKS]),
+    categories: safeParse('tf_categories', [...DEFAULT_CATEGORIES]),
+    projects: safeParse('tf_projects', [...DEFAULT_PROJECTS]),
+    gym: safeParse('tf_gym', []),
+    diet: safeParse('tf_diet', []),
+    customFoods: safeParse('tf_custom_foods', {}),
+    water: safeParse('tf_water', {}),
+    events: safeParse('tf_events', []),
+    removedFoods: safeParse('tf_removed_foods', []),
+    weight: safeParse('tf_weight', {}),
+    goals: safeParse('tf_goals', {}),
   };
 }
 
@@ -61,9 +67,16 @@ function saveData(data) {
   localStorage.setItem('tf_removed_foods', JSON.stringify(data.removedFoods || []));
   localStorage.setItem('tf_weight', JSON.stringify(data.weight || {}));
   localStorage.setItem('tf_goals', JSON.stringify(data.goals || {}));
+
+  // Only advance the sync clock and push to the cloud once the initial cloud
+  // reconciliation has settled. Saves that fire during initial load (e.g.
+  // auto-banking foods in renderDiet) must NOT look newer than the cloud, or the
+  // next load would overwrite good cloud data with stale local data. If the sync
+  // layer failed to load at all, fall back to the previous behavior.
+  const reconciled = (typeof appReconciled === 'undefined') ? true : appReconciled;
+  if (!reconciled) return;
   localStorage.setItem('tf_last_updated', Date.now().toString());
-  // Sync to Firebase
-  saveToFirebase(data);
+  if (typeof saveToFirebase === 'function') saveToFirebase(data);
 }
 
 function applyFirebaseData(data) {

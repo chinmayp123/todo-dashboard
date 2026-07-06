@@ -4541,3 +4541,39 @@ button:not(:disabled):active {
   .reminders-bar { grid-template-columns: 1fr; }
   .stat-card { padding: 16px; }
 }
+
+/* ========== Settings View ========== */
+.settings-wrap {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.settings-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.settings-card h2 {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+.settings-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0 0 18px;
+}
+.settings-desc code {
+  background: var(--bg-hover);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.settings-danger {
+  border-color: var(--red);
+  background: var(--red-bg);
+}
+.settings-danger h2 { color: var(--red); }

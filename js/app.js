@@ -15,10 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Scroll to top on load
   window.scrollTo(0, 0);
 
-  // Initialize Firebase real-time sync
+  // Initialize Firebase real-time sync. The initial reconciliation inside
+  // initFirebaseSync decides whether to pull cloud data or push local up — we no
+  // longer blindly push local state after a timeout, which could clobber newer
+  // cloud data before it had a chance to load.
   initFirebaseSync(applyFirebaseData);
-  // Push current local data to Firebase on first load
-  setTimeout(() => saveToFirebase(state), 1500);
 });
 
 function setHeaderDate() {
@@ -147,8 +148,13 @@ function bindEvents() {
   $('#addProjectBtn').addEventListener('click', handleAddProject);
 
   // Backup / Restore
-  $('#exportBtn').addEventListener('click', exportBackup);
-  $('#importBtn').addEventListener('click', () => $('#importFile').click());
+  $('#exportBtn').addEventListener('click', () => exportBackup());
+  $('#importBtn').addEventListener('click', () => {
+    // Deliberate first step so a stray tap can't even open the file picker.
+    // Names the common mix-up: people mean "Backup" (download) and hit "Restore".
+    if (!confirm('Restore from a backup file?\n\nThis is only for recovering lost data — it will REPLACE everything on this device and in the cloud.\n\nDid you mean "Backup" instead? Tap Cancel if so.')) return;
+    $('#importFile').click();
+  });
   $('#importFile').addEventListener('change', importBackup);
 
   // Keyboard
@@ -164,7 +170,7 @@ function switchView(view) {
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   $$('.view').forEach(v => v.classList.remove('active'));
 
-  const titles = { dashboard: 'Dashboard', tasks: 'All Tasks', board: 'Board', calendar: 'Calendar', gym: 'Gym', diet: 'Diet' };
+  const titles = { dashboard: 'Dashboard', tasks: 'All Tasks', board: 'Board', calendar: 'Calendar', gym: 'Gym', diet: 'Diet', settings: 'Settings' };
   $('#viewTitle').textContent = titles[view];
   $(`#${view}View`).classList.add('active');
   render();
@@ -265,7 +271,9 @@ function handleAddProject() {
 }
 
 // ========== Backup / Restore ==========
-function exportBackup() {
+// Optional `prefix` names the file (used for the automatic pre-restore safety copy).
+function exportBackup(prefix) {
+  const namePrefix = (typeof prefix === 'string' && prefix) ? prefix : 'daylign-backup';
   const payload = {
     tasks: state.tasks,
     categories: state.categories,
@@ -275,8 +283,11 @@ function exportBackup() {
     customFoods: state.customFoods,
     water: state.water,
     events: state.events,
+    removedFoods: state.removedFoods,
+    weight: state.weight,
+    goals: state.goals,
     exportedAt: new Date().toISOString(),
-    version: 1,
+    version: 2,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -284,7 +295,7 @@ function exportBackup() {
   const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const a = document.createElement('a');
   a.href = url;
-  a.download = `daylign-backup-${stamp}.json`;
+  a.download = `${namePrefix}-${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -292,32 +303,73 @@ function exportBackup() {
 }
 
 function importBackup(e) {
-  const file = e.target.files && e.target.files[0];
+  const input = e.target;
+  const file = input.files && input.files[0];
+  input.value = ''; // reset now so the same file can be re-selected later
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
+    let data;
     try {
-      const data = JSON.parse(reader.result);
-      if (!confirm('Restore this backup? This REPLACES all current data on this device and in the cloud.')) {
-        e.target.value = '';
-        return;
-      }
-      state.tasks = data.tasks || [];
-      state.categories = data.categories || [];
-      state.projects = data.projects || [];
-      state.gym = data.gym || [];
-      state.diet = data.diet || [];
-      state.customFoods = data.customFoods || {};
-      state.water = data.water || {};
-      state.events = data.events || [];
-      saveData(state);
-      populateCategoryDropdowns();
-      render();
-      alert('Backup restored successfully.');
+      data = JSON.parse(reader.result);
     } catch (err) {
       alert('Could not read that backup file: ' + err.message);
+      return;
     }
-    e.target.value = '';
+    if (typeof data !== 'object' || data === null) {
+      alert('That does not look like a valid backup file.');
+      return;
+    }
+
+    // Summarize what this restore would replace, so it's an informed choice.
+    const dietOf = arr => (Array.isArray(arr) ? arr : []);
+    const curDiet = dietOf(state.diet).length;
+    const newDiet = dietOf(data.diet).length;
+    const curDays = new Set(dietOf(state.diet).map(x => x && x.date)).size;
+    const newDays = new Set(dietOf(data.diet).map(x => x && x.date)).size;
+    const when = data.exportedAt ? new Date(data.exportedAt).toLocaleString() : 'an unknown date';
+
+    // Always download the CURRENT data first, so any restore is undoable.
+    exportBackup('daylign-autosave-before-restore');
+
+    let msg =
+      `Restore this backup?\n\n` +
+      `• Backup created: ${when}\n` +
+      `• Backup has ${newDiet} diet entries across ${newDays} day(s)\n` +
+      `• You currently have ${curDiet} entries across ${curDays} day(s)\n\n` +
+      `This REPLACES everything on this device AND in the cloud (all your devices).\n` +
+      `A safety copy of your current data was just downloaded so you can undo this.`;
+
+    if (newDiet < curDiet || newDays < curDays) {
+      msg = `⚠️ This looks like an OLDER / smaller backup — you would LOSE ` +
+        `${Math.max(0, curDiet - newDiet)} diet entries and ` +
+        `${Math.max(0, curDays - newDays)} day(s) of history.\n\n` + msg;
+    }
+
+    // Require typing the word — a stray tap or reflexive "OK" can't get through.
+    const answer = prompt(msg + `\n\nType RESTORE (all caps) to confirm:`);
+    if (!answer || answer.trim().toUpperCase() !== 'RESTORE') {
+      alert('Restore cancelled — your data is unchanged.');
+      return;
+    }
+
+    state.tasks = data.tasks || [];
+    state.categories = data.categories || [];
+    state.projects = data.projects || [];
+    state.gym = data.gym || [];
+    state.diet = data.diet || [];
+    state.customFoods = data.customFoods || {};
+    state.water = data.water || {};
+    state.events = data.events || [];
+    // Only overwrite these when the backup actually contains them, so restoring
+    // an older backup (made before these were exported) can't wipe them.
+    if ('removedFoods' in data) state.removedFoods = data.removedFoods || [];
+    if ('weight' in data) state.weight = data.weight || {};
+    if ('goals' in data) state.goals = data.goals || {};
+    saveData(state);
+    populateCategoryDropdowns();
+    render();
+    alert('Backup restored successfully.');
   };
   reader.readAsText(file);
 }
