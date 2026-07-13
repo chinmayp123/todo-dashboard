@@ -4598,3 +4598,52 @@ button:not(:disabled):active {
   color: var(--accent);
   background: var(--accent-bg, rgba(109, 106, 248, 0.12));
 }
+
+/* ========== Yesterday's skip-list ========== */
+.diet-yesterday { margin-top: 16px; }
+.diet-yesterday:not(.has-content) { display: none; }
+
+.diet-yesterday-ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--green-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.diet-yesterday-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diet-yesterday-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.diet-yesterday-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diet-yesterday-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.diet-yesterday-reason {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  line-height: 1.45;
+}

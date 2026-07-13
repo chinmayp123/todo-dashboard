@@ -526,6 +526,9 @@ function renderDiet() {
   // Food recommendations based on remaining macros
   renderDietRecs(totals);
 
+  // Skip-list for today, learned from the last logged day
+  renderYesterdayAdvice();
+
   // End-of-day review: what pushed you over each macro
   renderDietReview(totals, dayEntries);
 
@@ -1430,6 +1433,114 @@ function renderDietRecs(totals) {
   $('#dietRecsToggle').addEventListener('click', () => {
     $('#dietRecs').classList.toggle('open');
   });
+}
+
+// ========== Yesterday's Skip-list ==========
+// Forward-looking twin of the end-of-day review: analyze the most recent
+// logged day and call out the specific foods to skip or shrink today.
+// Shown only on the live day — browsing history shows the review instead.
+function renderYesterdayAdvice() {
+  const el = $('#dietYesterday');
+  if (!el) return;
+  const hide = () => { el.innerHTML = ''; el.classList.remove('has-content'); };
+
+  const todayStr = getTodayStr();
+  if (dietViewDate !== todayStr) return hide();
+
+  // Most recent day before today with food logged, no older than a week
+  const prev = [...new Set(state.diet.map(e => e.date))]
+    .filter(d => d && d < todayStr).sort().reverse()[0];
+  if (!prev) return hide();
+  const weekAgo = new Date(todayStr + 'T00:00:00');
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  if (new Date(prev + 'T00:00:00') < weekAgo) return hide();
+
+  const y = new Date(todayStr + 'T00:00:00');
+  y.setDate(y.getDate() - 1);
+  const yesterdayStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
+  const dayName = prev === yesterdayStr ? 'yesterday' :
+    new Date(prev + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+
+  // Aggregate repeat foods so two chapati entries read as one line
+  const byFood = {};
+  for (const e of state.diet.filter(en => en.date === prev)) {
+    const name = (e.food || '').trim();
+    if (!name) continue;
+    const f = byFood[name.toLowerCase()] ||
+      (byFood[name.toLowerCase()] = { food: name, meal: e.meal, calories: 0, protein: 0, carbs: 0, fat: 0 });
+    f.calories += e.calories || 0;
+    f.protein += e.protein || 0;
+    f.carbs += e.carbs || 0;
+    f.fat += e.fat || 0;
+  }
+  const foods = Object.values(byFood);
+  if (!foods.length) return hide();
+
+  const totals = foods.reduce((acc, f) => {
+    acc.calories += f.calories; acc.carbs += f.carbs; acc.fat += f.fat;
+    return acc;
+  }, { calories: 0, carbs: 0, fat: 0 });
+
+  const goals = getGoals();
+  const overCal = Math.round(totals.calories - goals.calories);
+  const overCarbs = Math.round(totals.carbs - goals.carbs);
+  const overFat = Math.round(totals.fat - goals.fat);
+
+  // Stayed on budget → one quiet green line, no nagging
+  if (overCal <= 0 && overCarbs <= 0 && overFat <= 0) {
+    el.classList.add('has-content');
+    el.innerHTML = `<div class="diet-yesterday-ok">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      You stayed on budget ${dayName === 'yesterday' ? 'yesterday' : 'on ' + dayName} &mdash; same playbook today.
+    </div>`;
+    return;
+  }
+
+  // Flag the foods that did the damage, worst first
+  const flagged = [];
+  for (const f of foods) {
+    const cal = Math.round(f.calories);
+    const proteinPer100 = f.calories > 0 ? (f.protein / f.calories) * 100 : 0;
+    let reason = '';
+    if (overCal > 0 && f.calories >= overCal) {
+      reason = `${cal} cal — skipping this alone puts you back under budget`;
+    } else if (overCal > 0 && f.calories >= overCal * 0.5) {
+      reason = `${cal} cal — half of the ${overCal} cal overage by itself`;
+    } else if (overCarbs > 0 && f.carbs >= Math.max(30, overCarbs * 0.5)) {
+      reason = `${Math.round(f.carbs)}g carbs on a day that ran ${overCarbs}g over`;
+    } else if (overFat > 0 && f.fat >= Math.max(10, overFat * 0.5)) {
+      reason = `${Math.round(f.fat)}g fat on a day that ran ${overFat}g over`;
+    } else if (overCal > 0 && f.calories >= 200 && proteinPer100 < 4) {
+      reason = `${cal} cal for only ${Math.round(f.protein)}g protein — weak trade on a cut`;
+    }
+    if (reason) flagged.push({ ...f, reason });
+  }
+  flagged.sort((a, b) => b.calories - a.calories);
+  const top = flagged.slice(0, 4);
+  if (!top.length) return hide();
+
+  const overBits = [];
+  if (overCal > 0) overBits.push(`${overCal} cal`);
+  if (overCarbs > 0) overBits.push(`${overCarbs}g carbs`);
+  if (overFat > 0) overBits.push(`${overFat}g fat`);
+
+  el.classList.add('has-content');
+  el.innerHTML = `
+    <div class="diet-review-header">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      <span class="diet-review-title">Skip or shrink today</span>
+      <span class="diet-review-sub">${dayName} ran over by ${overBits.join(' · ')}</span>
+    </div>
+    <div class="diet-yesterday-list">
+      ${top.map(f => `
+        <div class="diet-yesterday-item">
+          <div class="diet-yesterday-item-head">
+            <span class="diet-yesterday-name">${esc(f.food)}</span>
+            <span class="diet-review-culprit-meal">${esc(f.meal || '')}</span>
+          </div>
+          <div class="diet-yesterday-reason">${f.reason}</div>
+        </div>`).join('')}
+    </div>`;
 }
 
 // ========== End-of-day Review ==========
