@@ -4396,3 +4396,38 @@ button:not(:disabled):active {
   .reminders-bar { grid-template-columns: 1fr; }
   .stat-card { padding: 16px; }
 }
+
+/* ========== Settings ========== */
+.settings-layout {
+  max-width: 640px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.settings-row:last-child {
+  padding-bottom: 0;
+}
+
+.settings-row-info h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.settings-row-info p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.settings-row .btn-secondary {
+  flex-shrink: 0;
+}

@@ -164,7 +164,7 @@ function switchView(view) {
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   $$('.view').forEach(v => v.classList.remove('active'));
 
-  const titles = { dashboard: 'Dashboard', tasks: 'All Tasks', board: 'Board', calendar: 'Calendar', gym: 'Gym', diet: 'Diet' };
+  const titles = { dashboard: 'Dashboard', tasks: 'All Tasks', board: 'Board', calendar: 'Calendar', gym: 'Gym', diet: 'Diet', settings: 'Settings' };
   $('#viewTitle').textContent = titles[view];
   $(`#${view}View`).classList.add('active');
   render();
