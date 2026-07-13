@@ -4431,3 +4431,24 @@ button:not(:disabled):active {
 .settings-row .btn-secondary {
   flex-shrink: 0;
 }
+
+/* ========== Food bank edit button ========== */
+.diet-custom-edit {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  opacity: 0.45;
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.diet-custom-item:hover .diet-custom-edit { opacity: 1; }
+
+.diet-custom-edit:hover {
+  color: var(--accent);
+  background: var(--accent-bg, rgba(109, 106, 248, 0.12));
+}

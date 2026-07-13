@@ -632,6 +632,7 @@ function renderDiet() {
       <div class="diet-custom-item" ${attrs}>
         <div class="diet-custom-item-main">
           <span class="diet-custom-item-name">${esc(name)}</span>
+          <button class="diet-custom-edit" data-edit-name="${esc(name)}" title="Fix this food's macros"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
           <button class="diet-custom-del" data-del-name="${esc(name)}" title="Remove from the food bank">&times;</button>
         </div>
         <div class="diet-custom-item-macros">
@@ -693,6 +694,22 @@ function renderDiet() {
         saveData(state);
         renderDiet();
         showToast(`${name} removed — it won't be auto-added again`);
+      });
+    });
+
+    // Edit: load the food into the form so corrected macros can overwrite it
+    $$('.diet-custom-edit').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const name = btn.dataset.editName;
+        if (!name) return;
+        const lower = name.toLowerCase();
+        const entry = Object.entries(state.customFoods).find(([k]) => k.toLowerCase() === lower);
+        const data = (entry && entry[1]) || FOOD_DATABASE[lower];
+        if (!data) return;
+        selectFoodFromDropdown(entry ? entry[0] : name, data);
+        $('#dietFoodName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast(`Editing ${name} — fix the macros, then press Update My Food`);
       });
     });
 
@@ -797,6 +814,16 @@ function selectFoodFromDropdown(name, data) {
   if (data.fiber) info.push(`Fiber: ${data.fiber}g`);
   if (data.sugar) info.push(`Sugar: ${data.sugar}g`);
   $('#dietServingInfo').innerHTML = `<span class="diet-serving-tag">${info.join(' &middot; ')}</span>`;
+  syncSaveCustomLabel();
+}
+
+// "Save as My Food" flips to "Update My Food" when the typed name is already banked
+function syncSaveCustomLabel() {
+  const label = $('#dietSaveCustomLabel');
+  if (!label) return;
+  const name = ($('#dietFoodName').value || '').trim().toLowerCase();
+  const exists = name && Object.keys(state.customFoods).some(k => k.toLowerCase() === name);
+  label.textContent = exists ? 'Update My Food' : 'Save as My Food';
 }
 
 // Auto-add a logged food to the searchable food database (My Foods) if it's new.
@@ -1105,6 +1132,7 @@ function bindDietEvents() {
     clearTimeout(dietSearchTimeout);
     clearTimeout(localSearchTimeout);
     $('#dietServingInfo').innerHTML = '';
+    syncSaveCustomLabel();
 
     const query = foodInput.value.trim();
     if (query.length < 2) {
@@ -1163,27 +1191,37 @@ function bindDietEvents() {
     renderDiet();
   });
 
-  // Save as custom food
+  // Save as custom food — also the override path for fixing a banked mistake
   $('#dietSaveCustomBtn').addEventListener('click', () => {
     const food = $('#dietFoodName').value.trim();
     const calories = Number($('#dietCalories').value);
     if (!food) { alert('Enter a food name first.'); return; }
     if (!calories) { alert('Fill in the macros before saving.'); return; }
+    const lower = food.toLowerCase();
     // Explicit save overrides an earlier delete
-    state.removedFoods = (state.removedFoods || []).filter(n => n !== food.toLowerCase());
+    state.removedFoods = (state.removedFoods || []).filter(n => n !== lower);
+    // Replace any case-variant instead of duplicating it
+    const existed = Object.keys(state.customFoods).some(k => k.toLowerCase() === lower);
+    for (const k of Object.keys(state.customFoods)) {
+      if (k.toLowerCase() === lower) delete state.customFoods[k];
+    }
+    // The macro fields hold totals for the current servings count — bank per-serving
+    const n = Number($('#dietServings').value) > 0 ? Number($('#dietServings').value) : 1;
     const serving = ($('#dietServingInfo').textContent || '').replace(/^Per serving:\s*/i, '').split('·')[0].trim() || '1 serving';
     state.customFoods[food] = {
-      calories,
-      protein: Number($('#dietProtein').value) || 0,
-      carbs: Number($('#dietCarbs').value) || 0,
-      fat: Number($('#dietFat').value) || 0,
+      calories: Math.round(calories / n),
+      protein: Math.round(((Number($('#dietProtein').value) || 0) / n) * 10) / 10,
+      carbs: Math.round(((Number($('#dietCarbs').value) || 0) / n) * 10) / 10,
+      fat: Math.round(((Number($('#dietFat').value) || 0) / n) * 10) / 10,
       serving,
       fiber: 0,
       sugar: 0,
     };
     saveData(state);
     renderDiet();
-    $('#dietServingInfo').innerHTML = '<span class="diet-serving-tag">Saved to My Foods!</span>';
+    showToast(existed ? `✓ ${food} updated in My Foods` : `✓ ${food} saved to My Foods`);
+    $('#dietServingInfo').innerHTML = `<span class="diet-serving-tag">${existed ? 'Updated!' : 'Saved to My Foods!'}</span>`;
+    syncSaveCustomLabel();
   });
 }
 
