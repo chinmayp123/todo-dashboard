@@ -302,6 +302,16 @@
           </div>
         </div>
 
+        <!-- Targets & Coach -->
+        <div class="card coach-card">
+          <div class="coach-head">
+            <h2>Targets &amp; Coach</h2>
+            <span class="weight-goal-chip" id="burnGoalChip" title="Edit goals"></span>
+          </div>
+          <div class="coach-targets" id="coachTargets"></div>
+          <div class="coach-recs" id="coachRecs"></div>
+        </div>
+
         <!-- Stats Row -->
         <div class="gym-stats" id="gymStats"></div>
 
@@ -533,6 +543,13 @@
             <label>Goal Weight (lbs)</label>
             <input type="number" id="goalWeight" min="50" max="500" step="1">
           </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Exercise Burn (cal/day)</label>
+            <input type="number" id="goalBurn" min="50" max="3000" step="25">
+          </div>
+          <div class="form-group"></div>
         </div>
         <div class="form-actions">
           <div class="form-actions-right">

@@ -88,12 +88,218 @@ function renderWeight() {
     </svg>`;
 }
 
+// ---- Targets & Coach ----
+// Calorie burn is a MET estimate: cal = MET x bodyweight(kg) x hours.
+// Each set is counted as ~2 min of session time (work + rest).
+const SET_MINUTES = 2;
+const MET_BODYWEIGHT = 5.0; // moderate-vigorous calisthenics
+const MET_WEIGHTED = 6.0;   // vigorous weight training
+
+const MUSCLE_GROUPS = {
+  push: ['push up', 'pushup', 'push-up', 'dip', 'press', 'bench', 'handstand', 'tricep'],
+  pull: ['pull up', 'pullup', 'chin up', 'row', 'curl', 'pulldown', 'muscle up', 'lever', 'face pull'],
+  legs: ['squat', 'lunge', 'deadlift', 'leg press', 'calf', 'glute', 'hip thrust', 'box jump'],
+  core: ['sit up', 'situp', 'crunch', 'plank', 'leg raise', 'twist', 'flutter', 'l-sit', 'dragon flag', 'mountain climber', 'superman'],
+};
+
+const GROUP_SUGGESTIONS = {
+  push: 'push ups or dips',
+  pull: 'pull ups or Australian rows',
+  legs: 'bodyweight squats and lunges',
+  core: 'planks and leg raises',
+};
+
+function muscleGroupFor(exercise) {
+  const name = (exercise || '').toLowerCase();
+  for (const [group, keywords] of Object.entries(MUSCLE_GROUPS)) {
+    if (keywords.some(k => name.includes(k))) return group;
+  }
+  return null;
+}
+
+function latestBodyWeightLbs() {
+  const entries = Object.entries(state.weight || {}).sort((a, b) => a[0].localeCompare(b[0]));
+  return entries.length ? entries[entries.length - 1][1] : 160;
+}
+
+function estimateBurnForDate(dateStr) {
+  const kg = latestBodyWeightLbs() * 0.4536;
+  return Math.round(state.gym.filter(e => e.date === dateStr).reduce((cal, ex) => {
+    const met = (ex.bodyweight || isBodyweightExercise(ex.exercise)) ? MET_BODYWEIGHT : MET_WEIGHTED;
+    return cal + met * kg * (SET_MINUTES / 60) * ex.sets.length;
+  }, 0));
+}
+
+// Trend over the trailing 3 weeks of weigh-ins → lbs per week (negative = losing)
+function weighInPace() {
+  const entries = Object.entries(state.weight || {}).sort((a, b) => a[0].localeCompare(b[0]));
+  if (entries.length < 2) return null;
+  const [lastDate, lastW] = entries[entries.length - 1];
+  const cutoff = new Date(lastDate + 'T00:00:00');
+  cutoff.setDate(cutoff.getDate() - 21);
+  const windowed = entries.filter(([d]) => new Date(d + 'T00:00:00') >= cutoff);
+  if (windowed.length < 2) return null;
+  const [firstDate, firstW] = windowed[0];
+  const days = (new Date(lastDate + 'T00:00:00') - new Date(firstDate + 'T00:00:00')) / 86400000;
+  if (days < 1) return null;
+  return { perWeek: (lastW - firstW) / days * 7, lastDate, lastW };
+}
+
+function gymDatesBetween(startStr, endStr) {
+  return state.gym.filter(e => e.date >= startStr && e.date <= endStr);
+}
+
+function offsetDateStr(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return toLocalDateStr(d);
+}
+
+function coachRecommendations(burn, burnGoal, pace) {
+  const goals = getGoals();
+  const recs = [];
+  const isToday = gymViewDate === getTodayStr();
+
+  const weekStart = offsetDateStr(gymViewDate, -6);
+  const prevWeekStart = offsetDateStr(gymViewDate, -13);
+  const prevWeekEnd = offsetDateStr(gymViewDate, -7);
+  const week = gymDatesBetween(weekStart, gymViewDate);
+  const prevWeek = gymDatesBetween(prevWeekStart, prevWeekEnd);
+
+  const cutting = latestBodyWeightLbs() > goals.weight;
+
+  // Pace safety first — losing too fast costs muscle
+  if (pace && cutting && pace.perWeek < -2) {
+    recs.push({ type: 'warn', text: `You're losing ${Math.abs(Math.round(pace.perWeek * 10) / 10)} lbs/week — faster than the ~1 lb/week sweet spot. Eat a little more and keep protein at ${goals.protein}g so the loss stays fat, not muscle.` });
+  } else if (pace && cutting && pace.perWeek > -0.3) {
+    recs.push({ type: 'warn', text: `Weight has barely moved over the last few weigh-ins (${pace.perWeek >= 0 ? '+' : ''}${Math.round(pace.perWeek * 10) / 10} lbs/week). Tighten calories toward ${goals.calories} or add a daily 30-min walk to restart the ~1 lb/week loss.` });
+  }
+
+  // Burn gap for today
+  if (isToday && burn < burnGoal) {
+    const kg = latestBodyWeightLbs() * 0.4536;
+    const calPerSet = MET_BODYWEIGHT * kg * (SET_MINUTES / 60);
+    const gap = burnGoal - burn;
+    const sets = Math.ceil(gap / calPerSet);
+    const walkMin = Math.max(10, Math.round(gap / (4.3 * kg / 60) / 5) * 5);
+    recs.push({ type: 'info', text: `${gap} cal left on today's burn target — roughly ${sets} more sets or a ${walkMin}-min brisk walk.` });
+  }
+
+  // Training frequency over the trailing week
+  const daysTrained = new Set(week.map(e => e.date)).size;
+  if (daysTrained < 4) {
+    recs.push({ type: 'warn', text: `You trained ${daysTrained} of the last 7 days. For calisthenics on a cut, 4-5 short sessions a week beats 1-2 long ones — it keeps the muscle-retention signal on.` });
+  }
+
+  // Muscle group balance
+  const groupSets = { push: 0, pull: 0, legs: 0, core: 0 };
+  for (const ex of week) {
+    const g = muscleGroupFor(ex.exercise);
+    if (g) groupSets[g] += ex.sets.length;
+  }
+  const missing = Object.keys(groupSets).filter(g => groupSets[g] === 0);
+  if (week.length && missing.length && missing.length < 4) {
+    recs.push({ type: 'warn', text: `No ${missing.join(' or ')} work in the last 7 days — add ${missing.map(g => GROUP_SUGGESTIONS[g]).join(', ')} to keep your physique balanced.` });
+  }
+
+  // Progression: total reps this week vs last week
+  const repCount = entries => entries.reduce((s, ex) => s + ex.sets.reduce((v, set) => v + Number(set.reps), 0), 0);
+  const repsNow = repCount(week);
+  const repsPrev = repCount(prevWeek);
+  if (repsPrev > 0 && repsNow > 0 && repsNow <= repsPrev) {
+    recs.push({ type: 'info', text: `Weekly volume is flat (${repsNow} reps vs ${repsPrev} last week). Add 1-2 reps per set or move to a harder variation (e.g. decline or diamond push ups) — progression is what changes your body.` });
+  }
+
+  // Protein yesterday (muscle retention on a cut)
+  const yday = offsetDateStr(gymViewDate, -1);
+  const ydayEntries = state.diet.filter(e => e.date === yday);
+  if (ydayEntries.length) {
+    const protein = Math.round(ydayEntries.reduce((s, e) => s + (e.protein || 0), 0));
+    if (protein < goals.protein * 0.8) {
+      recs.push({ type: 'warn', text: `Protein was ${protein}g yesterday vs your ${goals.protein}g target. On a cut, protein is what decides whether you lose fat or muscle — lead each meal with it.` });
+    }
+  }
+
+  // Stale weigh-ins
+  if (pace) {
+    const daysSince = Math.round((new Date(getTodayStr() + 'T00:00:00') - new Date(pace.lastDate + 'T00:00:00')) / 86400000);
+    if (daysSince >= 3) {
+      recs.push({ type: 'info', text: `Last weigh-in was ${daysSince} days ago — step on the scale (same time of day) so your pace tracking stays honest.` });
+    }
+  }
+
+  if (!recs.length) {
+    recs.push({ type: 'good', text: 'Frequency, muscle balance, and pace all look on track this week — keep doing exactly this.' });
+  }
+  return recs.slice(0, 4);
+}
+
+function renderGymCoach() {
+  const targetsEl = $('#coachTargets');
+  if (!targetsEl) return;
+  const goals = getGoals();
+  const burnGoal = goals.burn || 300;
+  const burn = estimateBurnForDate(gymViewDate);
+  const pct = Math.min(100, Math.round((burn / burnGoal) * 100));
+  const isToday = gymViewDate === getTodayStr();
+  $('#burnGoalChip').textContent = `Burn goal: ${burnGoal} cal/day`;
+
+  const pace = weighInPace();
+  const cutting = latestBodyWeightLbs() > goals.weight;
+  const targetPace = cutting ? -1 : 1;
+
+  let paceVal = '—';
+  let paceSub = `Log a couple of weigh-ins to see your pace (target ${targetPace} lb/week)`;
+  let paceFlag = '';
+  if (pace) {
+    const pw = Math.round(pace.perWeek * 10) / 10;
+    paceVal = `${pw > 0 ? '+' : ''}${pw}<small> lbs/wk</small>`;
+    const onTrack = cutting ? pace.perWeek <= -0.5 : pace.perWeek >= 0.5;
+    paceFlag = `<span class="coach-pace-flag ${onTrack ? 'good' : 'bad'}">${onTrack ? 'On track' : 'Off pace'}</span>`;
+    const toGo = goals.weight - pace.lastW;
+    const movingToward = toGo / pace.perWeek > 0;
+    if (Math.abs(pace.lastW - goals.weight) < 0.5) {
+      paceSub = `You're at your ${goals.weight} lbs goal — nice work.`;
+    } else if (movingToward && Math.abs(pace.perWeek) >= 0.1) {
+      const weeks = toGo / pace.perWeek;
+      if (weeks <= 52) {
+        const eta = new Date(pace.lastDate + 'T00:00:00');
+        eta.setDate(eta.getDate() + Math.round(weeks * 7));
+        paceSub = `Target ${targetPace} lb/week &middot; at this pace you hit ${goals.weight} lbs ~${eta.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      } else {
+        paceSub = `Target ${targetPace} lb/week &middot; current pace puts the goal over a year out`;
+      }
+    } else {
+      paceSub = `Target ${targetPace} lb/week &middot; you're currently moving away from ${goals.weight} lbs`;
+    }
+  }
+
+  targetsEl.innerHTML = `
+    <div class="coach-target">
+      <span class="coach-target-lbl">Est. Burn &mdash; ${isToday ? 'Today' : formatDate(gymViewDate)}</span>
+      <span class="coach-target-val">~${burn}<small> / ${burnGoal} cal</small></span>
+      <div class="coach-bar-track"><div class="coach-bar-fill ${burn >= burnGoal ? 'done' : ''}" style="width:${pct}%"></div></div>
+      <span class="coach-target-sub">${burn >= burnGoal ? 'Burn target hit' : `${burnGoal - burn} cal to go`} &middot; estimated from your logged sets</span>
+    </div>
+    <div class="coach-target">
+      <span class="coach-target-lbl">Weekly Pace &rarr; ${goals.weight} lbs ${paceFlag}</span>
+      <span class="coach-target-val">${paceVal}</span>
+      <span class="coach-target-sub">${paceSub}</span>
+    </div>
+  `;
+
+  $('#coachRecs').innerHTML = coachRecommendations(burn, burnGoal, pace).map(r => `
+    <div class="coach-rec ${r.type}"><span class="coach-rec-dot"></span><span>${r.text}</span></div>
+  `).join('');
+}
+
 function renderGym() {
   const dateInput = $('#gymDate');
   if (!dateInput) return;
   dateInput.value = gymViewDate;
 
   renderWeight();
+  renderGymCoach();
 
   // Date label
   const todayStr = getTodayStr();
@@ -217,6 +423,8 @@ function renderGym() {
 }
 
 function bindGymEvents() {
+  const burnChip = $('#burnGoalChip');
+  if (burnChip && typeof openGoalsModal === 'function') burnChip.addEventListener('click', openGoalsModal);
   // Re-render set inputs when exercise name changes (bodyweight detection)
   $('#gymExerciseName').addEventListener('change', () => renderGym());
   $('#gymDate').addEventListener('change', (e) => { gymViewDate = e.target.value; renderGym(); });

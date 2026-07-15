@@ -4427,6 +4427,125 @@ button:not(:disabled):active {
 .weight-delta.good { background: var(--green-bg); color: var(--green); }
 .weight-delta.bad { background: var(--red-bg); color: var(--red); }
 
+/* ---- Targets & Coach card ---- */
+.coach-card {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+}
+
+.coach-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.coach-head h2 { margin-bottom: 0; }
+
+.coach-targets {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.coach-target {
+  flex: 1;
+  min-width: 230px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coach-target-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coach-target-val {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.coach-target-val small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.coach-bar-track {
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.coach-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s;
+}
+
+.coach-bar-fill.done { background: var(--green); }
+
+.coach-target-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.coach-pace-flag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.coach-pace-flag.good { background: var(--green-bg); color: var(--green); }
+.coach-pace-flag.bad { background: var(--red-bg); color: var(--red); }
+
+.coach-recs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coach-rec {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.coach-rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.coach-rec.warn .coach-rec-dot { background: #eab308; }
+.coach-rec.good .coach-rec-dot { background: var(--green); }
+.coach-rec.info .coach-rec-dot { background: var(--accent); }
+
 .weight-date {
   font-size: 12px;
   color: var(--text-muted);

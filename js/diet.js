@@ -1253,6 +1253,7 @@ const DEFAULT_GOALS = {
   fat: 60,
   water: 66,     // oz/day
   weight: 150,   // lbs target
+  burn: 300,     // cal/day from exercise — pads the deficit so diet slip-ups still net out
 };
 
 function getGoals() {
@@ -1677,6 +1678,7 @@ function openGoalsModal() {
   $('#goalFat').value = g.fat;
   $('#goalWater').value = g.water;
   $('#goalWeight').value = g.weight;
+  $('#goalBurn').value = g.burn;
   $('#goalsModal').classList.add('active');
 }
 
@@ -1706,6 +1708,7 @@ function bindGoalsEvents() {
       fat: read('#goalFat', prev.fat),
       water: read('#goalWater', prev.water),
       weight: read('#goalWeight', prev.weight),
+      burn: read('#goalBurn', prev.burn),
     };
     saveData(state);
     closeGoalsModal();
