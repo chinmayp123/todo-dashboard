@@ -41,10 +41,20 @@ function renderHealthStrip(today) {
   const latestW = weighIns.length ? weighIns[weighIns.length - 1][1] : null;
   const calOver = cal > g.calories;
 
+  // Net calories: eaten minus what training and walking burned. This is the
+  // number that decides whether today was actually a deficit day.
+  const workoutBurn = (typeof estimateBurnForDate === 'function') ? estimateBurnForDate(today) : 0;
+  const steps = (typeof getExternalSteps === 'function') ? getExternalSteps(today) : null;
+  const walkBurn = steps ? Math.round(steps * (latestW || 160) * 0.00025) : 0;
+  const totalBurn = workoutBurn + walkBurn;
+  const net = cal - totalBurn;
+
   const tiles = [
     { view: 'diet', label: 'Calories', value: cal, sub: `/ ${g.calories}`, pct: Math.min(100, (cal / g.calories) * 100), color: calOver ? 'var(--red)' : 'var(--accent)' },
+    { view: 'gym', label: 'Net Cals', value: net, sub: `− ${totalBurn} burned`, pct: Math.min(100, Math.max(0, (net / g.calories) * 100)), color: net > g.calories ? 'var(--red)' : 'var(--green)' },
     { view: 'diet', label: 'Protein', value: `${protein}g`, sub: `/ ${g.protein}g`, pct: Math.min(100, (protein / g.protein) * 100), color: '#6366f1' },
     { view: 'diet', label: 'Water', value: `${water} oz`, sub: `/ ${g.water} oz`, pct: Math.min(100, (water / g.water) * 100), color: '#38bdf8' },
+    ...(steps !== null ? [{ view: 'gym', label: 'Steps', value: steps.toLocaleString(), sub: `/ ${(g.steps || 8000).toLocaleString()}`, pct: Math.min(100, (steps / (g.steps || 8000)) * 100), color: '#22c55e' }] : []),
     { view: 'gym', label: 'Weight', value: latestW !== null ? `${latestW} lbs` : '—', sub: latestW !== null ? `→ ${g.weight} lbs` : 'log a weigh-in',
       pct: null, note: latestW !== null ? `${Math.round(Math.abs(latestW - g.weight) * 10) / 10} lbs to go` : 'Tap to log your first', color: 'var(--purple)' },
   ];
@@ -125,6 +135,126 @@ function renderWeightTrend() {
     </div>`;
 }
 
+// Weekly Report — trailing 7-day averages vs goals, plus one focus for the week
+function renderWeeklyReport() {
+  const host = $('#weeklyReport');
+  if (!host) return;
+  const g = (typeof getGoals === 'function') ? getGoals() : { calories: 2000, protein: 150, water: 66, weight: 155 };
+  const meta = $('#weeklyReportMeta');
+  if (meta) meta.textContent = 'last 7 days';
+
+  // Trailing 7 days: today back through 6 days ago
+  const days = [];
+  const todayDate = new Date(getTodayStr() + 'T00:00:00');
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(todayDate);
+    d.setDate(d.getDate() - i);
+    days.push(toLocalDateStr(d));
+  }
+
+  // Diet: averages over logged days only
+  const diet = state.diet || [];
+  let dietDays = 0, calSum = 0, proteinSum = 0;
+  days.forEach(day => {
+    const entries = diet.filter(e => e.date === day);
+    if (!entries.length) return;
+    dietDays++;
+    calSum += entries.reduce((s, e) => s + (e.calories || 0), 0);
+    proteinSum += entries.reduce((s, e) => s + (e.protein || 0), 0);
+  });
+  const avgCal = dietDays ? Math.round(calSum / dietDays) : 0;
+  const avgProtein = dietDays ? Math.round(proteinSum / dietDays) : 0;
+
+  // Training: days with any gym entry, plus total sets
+  const gym = state.gym || [];
+  let daysTrained = 0, totalSets = 0;
+  days.forEach(day => {
+    const entries = gym.filter(e => e.date === day);
+    if (entries.length) daysTrained++;
+    totalSets += entries.reduce((s, e) => s + ((e.sets && e.sets.length) || 0), 0);
+  });
+
+  // Water: average of daily totals over days with entries
+  const waterLog = state.water || {};
+  let waterDays = 0, waterSum = 0;
+  days.forEach(day => {
+    const entries = waterLog[day];
+    if (!entries || !entries.length) return;
+    waterDays++;
+    waterSum += entries.reduce((s, v) => s + v, 0);
+  });
+  const avgWater = waterDays ? Math.round(waterSum / waterDays) : 0;
+
+  // Weight: smoothed trend change over roughly the last week
+  let weightChange = null;
+  if (typeof weightTrendSeries === 'function') {
+    const series = weightTrendSeries() || [];
+    if (series.length >= 2) {
+      const last = series[series.length - 1];
+      const lastTime = new Date(last[0] + 'T00:00:00').getTime();
+      let ref = series[0];
+      for (let i = series.length - 2; i >= 0; i--) {
+        const t = new Date(series[i][0] + 'T00:00:00').getTime();
+        if (lastTime - t >= 7 * 86400000) { ref = series[i]; break; }
+      }
+      weightChange = Math.round((last[1] - ref[1]) * 10) / 10;
+    }
+  }
+
+  const rows = [];
+
+  // Calories (cutting: under budget is good)
+  if (dietDays) {
+    const calDot = avgCal <= g.calories ? 'good' : avgCal <= g.calories * 1.1 ? 'warn' : 'bad';
+    rows.push({ label: 'Calories', val: `${avgCal} avg / ${g.calories}`, dot: calDot });
+  } else {
+    rows.push({ label: 'Calories', val: 'no days logged', dot: 'warn' });
+  }
+
+  // Protein
+  const proteinDot = avgProtein >= g.protein * 0.9 ? 'good' : avgProtein >= g.protein * 0.7 ? 'warn' : 'bad';
+  rows.push({ label: 'Protein', val: `${avgProtein}g avg / ${g.protein}g`, dot: proteinDot });
+
+  // Training
+  const trainDot = daysTrained >= 4 ? 'good' : daysTrained >= 2 ? 'warn' : 'bad';
+  rows.push({ label: 'Training', val: `${daysTrained}/7 days · ${totalSets} sets`, dot: trainDot });
+
+  // Water
+  const waterDot = avgWater >= g.water * 0.9 ? 'good' : avgWater >= g.water * 0.6 ? 'warn' : 'bad';
+  rows.push({ label: 'Water', val: `${avgWater} oz avg / ${g.water} oz`, dot: waterDot });
+
+  // Weight trend (cutting: falling is good)
+  if (weightChange !== null) {
+    const weightDot = weightChange <= -0.5 ? 'good' : weightChange <= 0.2 ? 'warn' : 'bad';
+    rows.push({ label: 'Weight trend', val: `${weightChange > 0 ? '+' : ''}${weightChange} lbs this week`, dot: weightDot });
+  } else {
+    rows.push({ label: 'Weight trend', val: '— log weigh-ins', dot: 'warn' });
+  }
+
+  // One focus for the week, highest-impact issue first
+  let focus;
+  if (dietDays && avgProtein < g.protein * 0.8) {
+    focus = `lead every meal with protein — you averaged ${avgProtein}g vs the ${g.protein}g target`;
+  } else if (daysTrained < 4) {
+    focus = 'train at least 4 days — short sessions count';
+  } else if (dietDays && avgCal > g.calories) {
+    focus = `tighten calories back to the ~${g.calories} budget`;
+  } else if (weightChange === null || weightChange > -0.3) {
+    focus = 'hold the deficit steady and weigh in daily so the trend is trustworthy';
+  } else {
+    focus = "everything's on track — repeat last week";
+  }
+
+  host.innerHTML = `
+    ${rows.map(r => `
+      <div class="weekly-row">
+        <span class="weekly-dot ${r.dot}"></span>
+        <span class="weekly-row-label">${r.label}</span>
+        <span class="weekly-row-val">${r.val}</span>
+      </div>`).join('')}
+    <div class="weekly-focus">Focus this week: <strong>${focus}</strong></div>`;
+}
+
 function renderDashboard() {
   renderDashboardProjectFilter();
 
@@ -146,6 +276,7 @@ function renderDashboard() {
 
   renderHealthStrip(today);
   renderWeightTrend();
+  renderWeeklyReport();
   renderReminders(today);
   renderMyTasksBoard(tasks);
 

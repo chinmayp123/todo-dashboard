@@ -14,6 +14,29 @@ const firebaseApp = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const DATA_REF = db.ref('lifestack');
 
+// External data (written by iPhone Shortcuts / Apple Health exports) lives at
+// a SEPARATE root node so the app's full-state writes to 'lifestack' can never
+// clobber it. The app only ever reads it. See HEALTH-SYNC.md for the setup.
+let externalData = null;
+
+function getExternalSteps(dateStr) {
+  const v = externalData && externalData.steps ? externalData.steps[dateStr] : null;
+  return v != null && Number(v) > 0 ? Number(v) : null;
+}
+
+function loadExternalData() {
+  try {
+    db.ref('external').once('value')
+      .then(snap => {
+        const v = snap.val();
+        if (!v) return;
+        externalData = v;
+        if (typeof render === 'function') render();
+      })
+      .catch(() => {}); // steps are a bonus — never let them break the app
+  } catch (e) { /* firebase unavailable — fine */ }
+}
+
 // Sync state
 let firebaseReady = false;
 let suppressFirebaseWrite = false; // prevent echo when receiving updates
@@ -81,6 +104,7 @@ function saveToFirebase(data) {
 // Load from Firebase once on startup, then listen for changes
 function initFirebaseSync(onDataReceived) {
   setSyncStatus('connecting');
+  loadExternalData();
   // First load
   DATA_REF.once('value')
     .then(snapshot => {

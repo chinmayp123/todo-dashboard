@@ -173,6 +173,15 @@
             <div id="weightTrendChart"></div>
           </div>
 
+          <!-- Weekly Report -->
+          <div class="card weekly-report-card">
+            <div class="weight-trend-head">
+              <h2>Weekly Report</h2>
+              <span class="weight-trend-meta" id="weeklyReportMeta"></span>
+            </div>
+            <div id="weeklyReport"></div>
+          </div>
+
           <!-- Daily Schedule -->
           <div class="card schedule-card">
             <div class="schedule-header">
@@ -312,6 +321,16 @@
           <div class="coach-recs" id="coachRecs"></div>
         </div>
 
+        <!-- Consistency -->
+        <div class="card streak-card">
+          <div class="coach-head">
+            <h2>Consistency</h2>
+            <span class="weight-goal-chip" id="streakSummary"></span>
+          </div>
+          <div class="streak-stats" id="streakStats"></div>
+          <div class="streak-heatmap-wrap"><div class="streak-heatmap" id="streakHeatmap"></div></div>
+        </div>
+
         <!-- Stats Row -->
         <div class="gym-stats" id="gymStats"></div>
 
@@ -323,10 +342,13 @@
         <!-- Add Exercise -->
         <div class="gym-add-bar">
           <input type="text" id="gymExerciseName" placeholder="Add exercise..." class="gym-exercise-input" list="exerciseSuggestions" autocomplete="off">
+          <div id="gymLastTime"></div>
           <datalist id="exerciseSuggestions"></datalist>
           <div class="gym-sets-inline" id="gymSetsList"></div>
           <div class="gym-add-actions">
             <button type="button" class="gym-add-set-btn" id="gymAddSetBtn">+ Set</button>
+            <button type="button" class="gym-rest-btn" data-rest="60">Rest 60s</button>
+            <button type="button" class="gym-rest-btn" data-rest="90">Rest 90s</button>
             <button type="button" class="btn-primary gym-save-btn" id="gymSaveExerciseBtn">Add Exercise</button>
           </div>
         </div>

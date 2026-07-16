@@ -1273,6 +1273,19 @@ function renderDietGoals(totals) {
     const pct = Math.min(100, Math.round((item.current / item.goal) * 100));
     const remaining = Math.max(0, item.goal - item.current);
     const over = item.current > item.goal;
+    const rawBurn = item.key === 'calories' && typeof estimateBurnForDate === 'function' ? estimateBurnForDate(dietViewDate) : 0;
+    const burn = Number.isFinite(rawBurn) ? Math.max(0, Math.round(rawBurn)) : 0;
+    const overBy = item.current - item.goal;
+    let remainingLine;
+    if (burn > 0 && !over) {
+      remainingLine = `${remaining} remaining · +${burn} earned from training → ${remaining + burn} net`;
+    } else if (burn > 0 && over) {
+      remainingLine = overBy - burn <= 0
+        ? `Over by ${overBy} on paper — training burned ~${burn}, so you're net under`
+        : `Over by ${overBy} · training claws back ~${burn} → net ${overBy - burn} over`;
+    } else {
+      remainingLine = over ? `Over by ${overBy}${item.unit}` : `${remaining}${item.unit} remaining`;
+    }
     return `
       <div class="diet-goal-row">
         <div class="diet-goal-header">
@@ -1286,7 +1299,7 @@ function renderDietGoals(totals) {
         <div class="diet-goal-bar-track">
           <div class="diet-goal-bar-fill ${over ? 'over' : ''}" style="width:${pct}%;background:${item.color}"></div>
         </div>
-        <div class="diet-goal-remaining">${over ? `Over by ${item.current - item.goal}${item.unit}` : `${remaining}${item.unit} remaining`}</div>
+        <div class="diet-goal-remaining">${remainingLine}</div>
       </div>`;
   }).join('');
 }

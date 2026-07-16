@@ -31,6 +31,19 @@ function isBodyweightExercise(name) {
   return false;
 }
 
+// 7-day rolling average of weigh-ins. Daily scale weight swings 1-3 lbs on
+// water and food timing alone; on a 10 lb cut that noise buries the signal,
+// so the trend value is the headline and the raw reading is secondary.
+function weightTrendSeries() {
+  const entries = Object.entries(state.weight || {}).sort((a, b) => a[0].localeCompare(b[0]));
+  const times = entries.map(([d]) => new Date(d + 'T00:00:00').getTime());
+  return entries.map(([d], i) => {
+    let sum = 0, n = 0;
+    for (let j = i; j >= 0 && times[i] - times[j] < 7 * 86400000; j--) { sum += entries[j][1]; n++; }
+    return [d, Math.round((sum / n) * 10) / 10];
+  });
+}
+
 function renderWeight() {
   const currentEl = $('#weightCurrent');
   if (!currentEl) return;
@@ -48,8 +61,10 @@ function renderWeight() {
     return;
   }
 
-  const [latestDate, latest] = entries[entries.length - 1];
-  const prev = entries.length > 1 ? entries[entries.length - 2][1] : null;
+  const [latestDate, latestRaw] = entries[entries.length - 1];
+  const trend = weightTrendSeries();
+  const latest = trend[trend.length - 1][1];
+  const prev = trend.length > 1 ? trend[trend.length - 2][1] : null;
   const delta = prev !== null ? Math.round((latest - prev) * 10) / 10 : null;
   // Direction-aware: moving toward the goal is good (green), away is red
   const losing = latest > WEIGHT_GOAL;
@@ -57,16 +72,16 @@ function renderWeight() {
   const toGo = Math.round(Math.abs(latest - WEIGHT_GOAL) * 10) / 10;
 
   currentEl.innerHTML = `
-    <span class="weight-num">${latest}<small> lbs</small></span>
+    <span class="weight-num">${latest}<small> lbs${trend.length > 1 ? ' trend' : ''}</small></span>
     ${delta !== null ? `<span class="weight-delta ${deltaGood ? 'good' : 'bad'}">${delta > 0 ? '▲' : delta < 0 ? '▼' : '—'} ${Math.abs(delta)}</span>` : ''}
-    <span class="weight-date">${formatDate(latestDate)}</span>
+    <span class="weight-date">${latestRaw !== latest ? `scale ${latestRaw} · ` : ''}${formatDate(latestDate)}</span>
   `;
   $('#weightGoalChip').textContent = toGo === 0
     ? `At goal: ${WEIGHT_GOAL} lbs`
     : `${toGo} lbs to ${losing ? 'lose' : 'gain'} → ${WEIGHT_GOAL}`;
 
-  // Sparkline of the last 12 weigh-ins
-  const pts = entries.slice(-12).map(([, w]) => w);
+  // Sparkline of the last 12 trend points (smoothed, not raw)
+  const pts = trend.slice(-12).map(([, w]) => w);
   if (pts.length < 2) {
     $('#weightSpark').innerHTML = '';
     return;
@@ -130,9 +145,10 @@ function estimateBurnForDate(dateStr) {
   }, 0));
 }
 
-// Trend over the trailing 3 weeks of weigh-ins → lbs per week (negative = losing)
+// Pace over the trailing 3 weeks → lbs per week (negative = losing).
+// Runs on the smoothed trend series so one salty dinner can't flip the verdict.
 function weighInPace() {
-  const entries = Object.entries(state.weight || {}).sort((a, b) => a[0].localeCompare(b[0]));
+  const entries = weightTrendSeries();
   if (entries.length < 2) return null;
   const [lastDate, lastW] = entries[entries.length - 1];
   const cutoff = new Date(lastDate + 'T00:00:00');
@@ -147,6 +163,172 @@ function weighInPace() {
 
 function gymDatesBetween(startStr, endStr) {
   return state.gym.filter(e => e.date >= startStr && e.date <= endStr);
+}
+
+// ---- Progressive overload: last-time chip, PRs, progressions ----
+// A set's score: reps for bodyweight work, reps x weight for loaded work.
+function setScore(ex, s) {
+  const bw = ex.bodyweight || isBodyweightExercise(ex.exercise);
+  return bw ? Number(s.reps) || 0 : (Number(s.reps) || 0) * (Number(s.weight) || 0);
+}
+
+function bestSetScore(ex) {
+  return ex.sets.reduce((m, s) => Math.max(m, setScore(ex, s)), 0);
+}
+
+// All sessions of an exercise strictly before a date, newest first
+function exerciseHistory(name, beforeDate) {
+  const lower = (name || '').toLowerCase().trim();
+  if (!lower) return [];
+  return state.gym
+    .filter(e => (e.exercise || '').toLowerCase().trim() === lower && e.date < beforeDate)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// Calisthenics progression chains, easiest → hardest. When the last two
+// sessions of an exercise clear the rep threshold on every set, it has
+// stopped being a growth stimulus — time to move up the chain.
+const PROGRESSION_CHAINS = [
+  { chain: ['Wall Push Ups', 'Incline Push Ups', 'Knee Push Ups', 'Push Ups', 'Wide Push Ups', 'Decline Push Ups', 'Diamond Push Ups', 'Pike Push Ups', 'Handstand Push Up'], threshold: 20 },
+  { chain: ['Crunches', 'Sit Ups', 'Bicycle Crunches', 'Leg Raises', 'Hanging Leg Raises', 'Dragon Flag'], threshold: 25 },
+  { chain: ['Bodyweight Squat', 'Jump Squat', 'Lunges', 'Bulgarian Split Squat', 'Pistol Squat'], threshold: 20 },
+  { chain: ['Australian Rows', 'Inverted Rows', 'Chin Up', 'Pull Up', 'Muscle Up'], threshold: 12 },
+  { chain: ['Dip', 'Ring Dip'], threshold: 15 },
+];
+
+function progressionSuggestion() {
+  for (const { chain, threshold } of PROGRESSION_CHAINS) {
+    for (let i = chain.length - 2; i >= 0; i--) { // hardest mastered variation wins
+      const name = chain[i].toLowerCase();
+      const next = chain[i + 1];
+      if (state.gym.some(e => (e.exercise || '').toLowerCase() === next.toLowerCase())) continue;
+      const sessions = state.gym
+        .filter(e => (e.exercise || '').toLowerCase() === name && e.date <= gymViewDate)
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 2);
+      if (sessions.length === 2 &&
+          sessions.every(s => s.sets.length >= 3 && s.sets.every(set => Number(set.reps) >= threshold))) {
+        return { from: chain[i], to: next, threshold };
+      }
+    }
+  }
+  return null;
+}
+
+// The "beat last time" chip under the exercise input — previous session,
+// all-time PR, and a concrete target for today.
+function renderLastTimeChip() {
+  const el = $('#gymLastTime');
+  if (!el) return;
+  const name = $('#gymExerciseName').value.trim();
+  if (!name) { el.innerHTML = ''; return; }
+  const hist = exerciseHistory(name, gymViewDate);
+  if (!hist.length) {
+    el.innerHTML = `<div class="gym-lasttime">First time logging <strong>${esc(name)}</strong> — today sets the baseline.</div>`;
+    return;
+  }
+  const last = hist[0];
+  const bw = last.bodyweight || isBodyweightExercise(last.exercise);
+  const setsStr = last.sets.map(s => bw ? s.reps : `${s.reps}&times;${s.weight}`).join(', ');
+  const pr = hist.reduce((m, ex) => Math.max(m, bestSetScore(ex)), 0);
+  const lastBestReps = last.sets.reduce((m, s) => Math.max(m, Number(s.reps) || 0), 0);
+  const target = bw
+    ? `get ${lastBestReps + 1} reps on your first set`
+    : 'add a rep to each set, or +2.5 lbs';
+  el.innerHTML = `<div class="gym-lasttime">
+    <span class="gym-lasttime-label">Last time (${formatDate(last.date)}):</span>
+    <span class="gym-lasttime-sets">${setsStr}</span>
+    <span class="gym-lasttime-pr">PR: ${bw ? pr + ' reps' : pr.toLocaleString() + ' lbs&middot;set'}</span>
+    <span class="gym-lasttime-target">Beat it &mdash; ${target}</span>
+  </div>`;
+}
+
+// ---- Consistency: streak stats + 16-week heatmap ----
+function renderStreak() {
+  const heatEl = $('#streakHeatmap');
+  if (!heatEl) return;
+  const daySets = {};
+  for (const e of state.gym) daySets[e.date] = (daySets[e.date] || 0) + e.sets.length;
+
+  const today = getTodayStr();
+  // Current streak: consecutive training days ending today (or yesterday, so
+  // a morning view before the workout doesn't read as a broken streak)
+  let streak = 0;
+  const d = new Date(today + 'T00:00:00');
+  if (!daySets[today]) d.setDate(d.getDate() - 1);
+  while (daySets[toLocalDateStr(d)]) { streak++; d.setDate(d.getDate() - 1); }
+
+  let best = 0, run = 0, prevT = null;
+  for (const ds of Object.keys(daySets).sort()) {
+    const t = new Date(ds + 'T00:00:00').getTime();
+    run = (prevT !== null && t - prevT === 86400000) ? run + 1 : 1;
+    if (run > best) best = run;
+    prevT = t;
+  }
+
+  let week = 0;
+  for (let i = 0; i < 7; i++) {
+    const dd = new Date(today + 'T00:00:00');
+    dd.setDate(dd.getDate() - i);
+    if (daySets[toLocalDateStr(dd)]) week++;
+  }
+
+  $('#streakSummary').textContent = `${week}/7 days this week`;
+  $('#streakStats').innerHTML = `
+    <div class="gym-stat"><span class="gym-stat-val">${streak}</span><span class="gym-stat-lbl">Day Streak</span></div>
+    <div class="gym-stat"><span class="gym-stat-val">${week}<small class="streak-stat-target"> / 4+</small></span><span class="gym-stat-lbl">This Week</span></div>
+    <div class="gym-stat"><span class="gym-stat-val">${best}</span><span class="gym-stat-lbl">Best Streak</span></div>
+  `;
+
+  // 16 weeks, columns = weeks, rows = Mon..Sun, GitHub-style
+  const WEEKS = 16;
+  const end = new Date(today + 'T00:00:00');
+  const endDow = (end.getDay() + 6) % 7; // Mon = 0
+  const start = new Date(end);
+  start.setDate(start.getDate() - (WEEKS * 7 - 1) + (6 - endDow));
+  const cells = [];
+  for (let i = 0; i < WEEKS * 7; i++) {
+    const dd = new Date(start);
+    dd.setDate(start.getDate() + i);
+    const ds = toLocalDateStr(dd);
+    if (ds > today) { cells.push('<div class="streak-cell future"></div>'); continue; }
+    const sets = daySets[ds] || 0;
+    const lvl = sets === 0 ? 0 : sets < 6 ? 1 : sets < 12 ? 2 : 3;
+    const label = new Date(ds + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    cells.push(`<div class="streak-cell lvl${lvl}" title="${label}${sets ? ` · ${sets} sets` : ' · rest'}"></div>`);
+  }
+  heatEl.innerHTML = cells.join('');
+}
+
+// ---- Rest timer ----
+let restInterval = null;
+
+function stopRestTimer() {
+  if (restInterval) clearInterval(restInterval);
+  restInterval = null;
+  $$('.gym-rest-btn').forEach(b => {
+    b.classList.remove('active');
+    b.textContent = `Rest ${b.dataset.rest}s`;
+  });
+}
+
+function startRestTimer(btn) {
+  const wasActive = btn.classList.contains('active');
+  stopRestTimer();
+  if (wasActive) return; // tapping the running timer cancels it
+  btn.classList.add('active');
+  let left = Number(btn.dataset.rest);
+  btn.textContent = `${left}s`;
+  restInterval = setInterval(() => {
+    left--;
+    if (left <= 0) {
+      stopRestTimer();
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      showToast('Rest over — next set!');
+    } else {
+      btn.textContent = `${left}s`;
+    }
+  }, 1000);
 }
 
 function offsetDateStr(dateStr, days) {
@@ -202,11 +384,17 @@ function coachRecommendations(burn, burnGoal, pace) {
     recs.push({ type: 'warn', text: `No ${missing.join(' or ')} work in the last 7 days — add ${missing.map(g => GROUP_SUGGESTIONS[g]).join(', ')} to keep your physique balanced.` });
   }
 
+  // Progression ladder: mastered a variation → point at the next one
+  const prog = progressionSuggestion();
+  if (prog) {
+    recs.push({ type: 'good', text: `You've cleared ${prog.threshold}+ reps across your last two ${prog.from} sessions — that variation has stopped challenging you. Progress to ${prog.to}.` });
+  }
+
   // Progression: total reps this week vs last week
   const repCount = entries => entries.reduce((s, ex) => s + ex.sets.reduce((v, set) => v + Number(set.reps), 0), 0);
   const repsNow = repCount(week);
   const repsPrev = repCount(prevWeek);
-  if (repsPrev > 0 && repsNow > 0 && repsNow <= repsPrev) {
+  if (!prog && repsPrev > 0 && repsNow > 0 && repsNow <= repsPrev) {
     recs.push({ type: 'info', text: `Weekly volume is flat (${repsNow} reps vs ${repsPrev} last week). Add 1-2 reps per set or move to a harder variation (e.g. decline or diamond push ups) — progression is what changes your body.` });
   }
 
@@ -300,6 +488,8 @@ function renderGym() {
 
   renderWeight();
   renderGymCoach();
+  renderStreak();
+  renderLastTimeChip();
 
   // Date label
   const todayStr = getTodayStr();
@@ -362,12 +552,16 @@ function renderGym() {
       const isBW = ex.bodyweight || isBodyweightExercise(ex.exercise);
       const totalRepsEx = ex.sets.reduce((sum, s) => sum + Number(s.reps), 0);
       const vol = ex.sets.reduce((sum, s) => sum + (Number(s.reps) * Number(s.weight)), 0);
+      // PR: best set today beats every earlier session of this exercise
+      const hist = exerciseHistory(ex.exercise, ex.date);
+      const isPR = hist.length > 0 && bestSetScore(ex) > hist.reduce((m, h) => Math.max(m, bestSetScore(h)), 0);
       return `
       <div class="gym-entry">
         <div class="gym-entry-head">
           <div class="gym-entry-left">
             <span class="gym-entry-num">${idx + 1}</span>
             <span class="gym-entry-name">${esc(ex.exercise)}</span>
+            ${isPR ? '<span class="gym-pr-badge">PR</span>' : ''}
             ${isBW ? '<span class="gym-bw-badge">Bodyweight</span>' : ''}
           </div>
           <div class="gym-entry-right">
@@ -427,6 +621,9 @@ function bindGymEvents() {
   if (burnChip && typeof openGoalsModal === 'function') burnChip.addEventListener('click', openGoalsModal);
   // Re-render set inputs when exercise name changes (bodyweight detection)
   $('#gymExerciseName').addEventListener('change', () => renderGym());
+  // Live "beat last time" chip while typing (chip only — no full re-render mid-keystroke)
+  $('#gymExerciseName').addEventListener('input', renderLastTimeChip);
+  $$('.gym-rest-btn').forEach(btn => btn.addEventListener('click', () => startRestTimer(btn)));
   $('#gymDate').addEventListener('change', (e) => { gymViewDate = e.target.value; renderGym(); });
   $('#gymPrevDay').addEventListener('click', () => {
     const d = new Date(gymViewDate + 'T00:00:00');

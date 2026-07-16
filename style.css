@@ -3686,6 +3686,8 @@ body {
   .week-col { min-height: 200px; }
   .gym-stats { flex-wrap: wrap; }
   .gym-stat { min-width: calc(50% - 6px); }
+  .streak-stats { flex-wrap: wrap; }
+  .streak-stats .gym-stat { min-width: calc(33% - 8px); }
   .diet-layout { grid-template-columns: 1fr; }
 }
 
@@ -4767,4 +4769,174 @@ button:not(:disabled):active {
   color: var(--text-secondary);
   margin-top: 3px;
   line-height: 1.45;
+}
+
+/* ---- Streak card ---- */
+.streak-card {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+}
+
+.streak-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.streak-stats .gym-stat {
+  background: var(--bg-secondary);
+}
+
+.streak-stat-target {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.streak-heatmap-wrap {
+  overflow-x: auto;
+}
+
+.streak-heatmap {
+  display: grid;
+  grid-template-rows: repeat(7, 11px);
+  grid-auto-flow: column;
+  grid-auto-columns: 11px;
+  gap: 3px;
+  width: max-content;
+}
+
+.streak-cell {
+  width: 11px;
+  height: 11px;
+  border-radius: 2.5px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.streak-cell.lvl1 { background: rgba(109, 106, 248, 0.35); border-color: transparent; }
+.streak-cell.lvl2 { background: rgba(109, 106, 248, 0.65); border-color: transparent; }
+.streak-cell.lvl3 { background: var(--accent); border-color: transparent; }
+.streak-cell.future { background: transparent; border-color: transparent; }
+
+/* ---- Last-time strip (gym exercise input) ---- */
+.gym-lasttime {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 8px 0 0;
+}
+
+.gym-lasttime-label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.gym-lasttime-pr {
+  background: var(--accent-glow);
+  color: var(--accent-hover);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.gym-lasttime-target {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ---- PR badge ---- */
+.gym-pr-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  padding: 2px 8px;
+  border-radius: 8px;
+  letter-spacing: 0.3px;
+}
+
+/* ---- Rest timer buttons ---- */
+.gym-rest-btn {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.gym-rest-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.gym-rest-btn.active {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+  background: var(--accent-glow);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Weekly Report card (dashboard) ---- */
+.weekly-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.weekly-row:last-child {
+  border-bottom: none;
+}
+
+.weekly-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.weekly-dot.good { background: var(--green); }
+.weekly-dot.warn { background: #eab308; }
+.weekly-dot.bad { background: var(--red); }
+
+.weekly-row-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.weekly-row-val {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.weekly-focus {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  background: var(--accent-glow);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  line-height: 1.45;
+}
+
+.weekly-focus strong {
+  color: var(--accent-hover);
 }
