@@ -1497,26 +1497,35 @@ function renderYesterdayAdvice() {
     return;
   }
 
-  // Flag the foods that did the damage, worst first
+  // Flag the foods that did the damage, worst first. Protein-dense foods get
+  // "shrink" advice instead of "skip" — dropping them to fix a carb/fat overage
+  // costs the one macro worth protecting on a cut.
   const flagged = [];
   for (const f of foods) {
     const cal = Math.round(f.calories);
+    const protein = Math.round(f.protein);
     const proteinPer100 = f.calories > 0 ? (f.protein / f.calories) * 100 : 0;
+    const proteinDense = protein >= 15 || proteinPer100 >= 8;
     let reason = '';
     if (overCal > 0 && f.calories >= overCal) {
-      reason = `${cal} cal — skipping this alone puts you back under budget`;
+      reason = proteinDense
+        ? `${cal} cal covers the overage, but it carried ${protein}g protein — shrink the portion, don't skip it`
+        : `${cal} cal — skipping this alone puts you back under budget`;
     } else if (overCal > 0 && f.calories >= overCal * 0.5) {
-      reason = `${cal} cal — half of the ${overCal} cal overage by itself`;
+      reason = `${cal} cal — half of the ${overCal} cal overage by itself${proteinDense ? ` (but ${protein}g protein: shrink, don't skip)` : ''}`;
     } else if (overCarbs > 0 && f.carbs >= Math.max(30, overCarbs * 0.5)) {
-      reason = `${Math.round(f.carbs)}g carbs on a day that ran ${overCarbs}g over`;
+      reason = `${Math.round(f.carbs)}g carbs on a day that ran ${overCarbs}g over${proteinDense ? ` — shrink it, it also brought ${protein}g protein` : ''}`;
     } else if (overFat > 0 && f.fat >= Math.max(10, overFat * 0.5)) {
-      reason = `${Math.round(f.fat)}g fat on a day that ran ${overFat}g over`;
+      reason = proteinDense
+        ? `${Math.round(f.fat)}g fat but also ${protein}g protein — go for a leaner version instead of skipping`
+        : `${Math.round(f.fat)}g fat on a day that ran ${overFat}g over`;
     } else if (overCal > 0 && f.calories >= 200 && proteinPer100 < 4) {
-      reason = `${cal} cal for only ${Math.round(f.protein)}g protein — weak trade on a cut`;
+      reason = `${cal} cal for only ${protein}g protein — weak trade on a cut`;
     }
     if (reason) flagged.push({ ...f, reason });
   }
-  flagged.sort((a, b) => b.calories - a.calories);
+  // Protein-light offenders first — they're the cheapest cuts
+  flagged.sort((a, b) => (a.protein / Math.max(a.calories, 1)) - (b.protein / Math.max(b.calories, 1)) || b.calories - a.calories);
   const top = flagged.slice(0, 4);
   if (!top.length) return hide();
 
@@ -1587,17 +1596,33 @@ function renderDietReview(totals, dayEntries) {
     const total = m.current;
     // Rank the day's foods by how much of THIS macro they contributed
     const culprits = dayEntries
-      .map(e => ({ food: e.food, meal: e.meal, val: Math.round(e[m.key] || 0) }))
+      .map(e => ({ food: e.food, meal: e.meal, val: Math.round(e[m.key] || 0), protein: Math.round(e.protein || 0) }))
       .filter(c => c.val > 0)
       .sort((a, b) => b.val - a.val)
       .slice(0, 3);
 
+    // Advice must weigh the protein cost: on a cut, cutting a protein-dense food
+    // to fix a small carb/fat overage is a net loss. Prefer the fix that
+    // sacrifices the least protein, and downgrade "skip" to "shrink" when the
+    // overage is small or every fix would cost real protein.
     const top = culprits[0];
     let tip = '';
     if (top) {
-      tip = top.val >= m.amount
-        ? `Skipping <strong>${esc(top.food)}</strong> alone would have kept you under your ${m.label.toLowerCase()} goal.`
-        : `<strong>${esc(top.food)}</strong> was the biggest driver — trimming it claws back ${top.val}${m.unit} of the ${m.amount}${m.unit} overage.`;
+      const coverers = culprits.filter(c => c.val >= m.amount);
+      const best = coverers.length
+        ? coverers.reduce((a, b) => (a.protein <= b.protein ? a : b))
+        : top;
+      const smallOverage = m.key === 'calories' ? m.amount <= 120 : m.amount <= 8;
+
+      if (smallOverage) {
+        tip = `Only ${m.amount}${m.unit} over — a slightly smaller serving of <strong>${esc(best.food)}</strong> covers it. Nothing here is worth skipping${best.protein >= 10 ? ` (it carried ${best.protein}g protein)` : ''}.`;
+      } else if (coverers.length && best.protein >= 12) {
+        tip = `<strong>${esc(best.food)}</strong> covers the ${m.amount}${m.unit} overage, but it also brought ${best.protein}g protein — shrink the portion or swap for a leaner version rather than skipping it.`;
+      } else if (coverers.length) {
+        tip = `Skipping <strong>${esc(best.food)}</strong> alone would have kept you under your ${m.label.toLowerCase()} goal${best.protein > 0 ? ` at a cost of only ${best.protein}g protein` : ''}.`;
+      } else {
+        tip = `<strong>${esc(top.food)}</strong> was the biggest driver — trimming it claws back ${top.val}${m.unit} of the ${m.amount}${m.unit} overage.`;
+      }
     }
 
     return `
@@ -1614,7 +1639,7 @@ function renderDietReview(totals, dayEntries) {
               <div class="diet-review-culprit">
                 <span class="diet-review-culprit-name">${esc(c.food)}</span>
                 <span class="diet-review-culprit-meal">${c.meal}</span>
-                <span class="diet-review-culprit-val">${c.val}${m.unit} &middot; ${pct}%</span>
+                <span class="diet-review-culprit-val">${c.val}${m.unit} &middot; ${pct}%${c.protein >= 5 ? ` &middot; <span class="diet-review-culprit-protein">${c.protein}g P</span>` : ''}</span>
               </div>`;
           }).join('')}
         </div>
