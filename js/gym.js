@@ -145,6 +145,15 @@ function estimateBurnForDate(dateStr) {
   }, 0));
 }
 
+// Prefer the Apple Watch's measured active calories when synced; fall back to
+// the MET estimate from logged sets. The watch number is whole-day active
+// energy (walking included), so callers must not add walk burn on top of it.
+function burnForDate(dateStr) {
+  const watch = (typeof getExternalActiveEnergy === 'function') ? getExternalActiveEnergy(dateStr) : null;
+  if (watch !== null) return { cal: Math.round(watch), watch: true };
+  return { cal: estimateBurnForDate(dateStr), watch: false };
+}
+
 // Pace over the trailing 3 weeks → lbs per week (negative = losing).
 // Runs on the smoothed trend series so one salty dinner can't flip the verdict.
 function weighInPace() {
@@ -427,7 +436,8 @@ function renderGymCoach() {
   if (!targetsEl) return;
   const goals = getGoals();
   const burnGoal = goals.burn || 300;
-  const burn = estimateBurnForDate(gymViewDate);
+  const burnInfo = burnForDate(gymViewDate);
+  const burn = burnInfo.cal;
   const pct = Math.min(100, Math.round((burn / burnGoal) * 100));
   const isToday = gymViewDate === getTodayStr();
   $('#burnGoalChip').textContent = `Burn goal: ${burnGoal} cal/day`;
@@ -464,10 +474,10 @@ function renderGymCoach() {
 
   targetsEl.innerHTML = `
     <div class="coach-target">
-      <span class="coach-target-lbl">Est. Burn &mdash; ${isToday ? 'Today' : formatDate(gymViewDate)}</span>
-      <span class="coach-target-val">~${burn}<small> / ${burnGoal} cal</small></span>
+      <span class="coach-target-lbl">${burnInfo.watch ? 'Active Burn' : 'Est. Burn'} &mdash; ${isToday ? 'Today' : formatDate(gymViewDate)}</span>
+      <span class="coach-target-val">${burnInfo.watch ? '' : '~'}${burn}<small> / ${burnGoal} cal</small></span>
       <div class="coach-bar-track"><div class="coach-bar-fill ${burn >= burnGoal ? 'done' : ''}" style="width:${pct}%"></div></div>
-      <span class="coach-target-sub">${burn >= burnGoal ? 'Burn target hit' : `${burnGoal - burn} cal to go`} &middot; estimated from your logged sets</span>
+      <span class="coach-target-sub">${burn >= burnGoal ? 'Burn target hit' : `${burnGoal - burn} cal to go`} &middot; ${burnInfo.watch ? 'measured by your Apple Watch' : 'estimated from your logged sets'}</span>
     </div>
     <div class="coach-target">
       <span class="coach-target-lbl">Weekly Pace &rarr; ${goals.weight} lbs ${paceFlag}</span>

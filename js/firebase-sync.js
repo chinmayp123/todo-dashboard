@@ -19,10 +19,17 @@ const DATA_REF = db.ref('lifestack');
 // clobber it. The app only ever reads it. See HEALTH-SYNC.md for the setup.
 let externalData = null;
 
-function getExternalSteps(dateStr) {
-  const v = externalData && externalData.steps ? externalData.steps[dateStr] : null;
+function getExternalMetric(node, dateStr) {
+  const v = externalData && externalData[node] ? externalData[node][dateStr] : null;
   return v != null && Number(v) > 0 ? Number(v) : null;
 }
+
+function getExternalSteps(dateStr) { return getExternalMetric('steps', dateStr); }
+// Apple Watch metrics (synced by the same Shortcut — see HEALTH-SYNC.md).
+// activeEnergy is whole-day active calories, so it already includes walking.
+function getExternalActiveEnergy(dateStr) { return getExternalMetric('activeEnergy', dateStr); }
+function getExternalExerciseMinutes(dateStr) { return getExternalMetric('exerciseMinutes', dateStr); }
+function getExternalRestingHR(dateStr) { return getExternalMetric('restingHR', dateStr); }
 
 function loadExternalData() {
   try {

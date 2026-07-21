@@ -42,19 +42,24 @@ function renderHealthStrip(today) {
   const calOver = cal > g.calories;
 
   // Net calories: eaten minus what training and walking burned. This is the
-  // number that decides whether today was actually a deficit day.
+  // number that decides whether today was actually a deficit day. When the
+  // Apple Watch has synced active energy, that measured number wins outright —
+  // it already includes both workouts and walking.
+  const watchBurn = (typeof getExternalActiveEnergy === 'function') ? getExternalActiveEnergy(today) : null;
   const workoutBurn = (typeof estimateBurnForDate === 'function') ? estimateBurnForDate(today) : 0;
   const steps = (typeof getExternalSteps === 'function') ? getExternalSteps(today) : null;
   const walkBurn = steps ? Math.round(steps * (latestW || 160) * 0.00025) : 0;
-  const totalBurn = workoutBurn + walkBurn;
+  const totalBurn = watchBurn !== null ? Math.round(watchBurn) : workoutBurn + walkBurn;
   const net = cal - totalBurn;
+  const exMin = (typeof getExternalExerciseMinutes === 'function') ? getExternalExerciseMinutes(today) : null;
 
   const tiles = [
     { view: 'diet', label: 'Calories', value: cal, sub: `/ ${g.calories}`, pct: Math.min(100, (cal / g.calories) * 100), color: calOver ? 'var(--red)' : 'var(--accent)' },
-    { view: 'gym', label: 'Net Cals', value: net, sub: `− ${totalBurn} burned`, pct: Math.min(100, Math.max(0, (net / g.calories) * 100)), color: net > g.calories ? 'var(--red)' : 'var(--green)' },
+    { view: 'gym', label: 'Net Cals', value: net, sub: `− ${totalBurn} burned${watchBurn !== null ? ' ⌚' : ''}`, pct: Math.min(100, Math.max(0, (net / g.calories) * 100)), color: net > g.calories ? 'var(--red)' : 'var(--green)' },
     { view: 'diet', label: 'Protein', value: `${protein}g`, sub: `/ ${g.protein}g`, pct: Math.min(100, (protein / g.protein) * 100), color: '#6366f1' },
     { view: 'diet', label: 'Water', value: `${water} oz`, sub: `/ ${g.water} oz`, pct: Math.min(100, (water / g.water) * 100), color: '#38bdf8' },
     ...(steps !== null ? [{ view: 'gym', label: 'Steps', value: steps.toLocaleString(), sub: `/ ${(g.steps || 8000).toLocaleString()}`, pct: Math.min(100, (steps / (g.steps || 8000)) * 100), color: '#22c55e' }] : []),
+    ...(exMin !== null ? [{ view: 'gym', label: 'Exercise', value: `${exMin} min`, sub: `/ ${g.exerciseMin || 30} min`, pct: Math.min(100, (exMin / (g.exerciseMin || 30)) * 100), color: '#f59e0b' }] : []),
     { view: 'gym', label: 'Weight', value: latestW !== null ? `${latestW} lbs` : '—', sub: latestW !== null ? `→ ${g.weight} lbs` : 'log a weigh-in',
       pct: null, note: latestW !== null ? `${Math.round(Math.abs(latestW - g.weight) * 10) / 10} lbs to go` : 'Tap to log your first', color: 'var(--purple)' },
   ];
@@ -185,6 +190,17 @@ function renderWeeklyReport() {
   });
   const avgWater = waterDays ? Math.round(waterSum / waterDays) : 0;
 
+  // Resting heart rate: Apple Watch metric, averaged over days with data.
+  // A falling resting HR is one of the cleanest signs conditioning is improving.
+  let hrDays = 0, hrSum = 0;
+  if (typeof getExternalRestingHR === 'function') {
+    days.forEach(day => {
+      const hr = getExternalRestingHR(day);
+      if (hr !== null) { hrDays++; hrSum += hr; }
+    });
+  }
+  const avgHR = hrDays ? Math.round(hrSum / hrDays) : null;
+
   // Weight: smoothed trend change over roughly the last week
   let weightChange = null;
   if (typeof weightTrendSeries === 'function') {
@@ -222,6 +238,12 @@ function renderWeeklyReport() {
   // Water
   const waterDot = avgWater >= g.water * 0.9 ? 'good' : avgWater >= g.water * 0.6 ? 'warn' : 'bad';
   rows.push({ label: 'Water', val: `${avgWater} oz avg / ${g.water} oz`, dot: waterDot });
+
+  // Resting HR (only when the watch has synced data)
+  if (avgHR !== null) {
+    const hrDot = avgHR <= 65 ? 'good' : avgHR <= 75 ? 'warn' : 'bad';
+    rows.push({ label: 'Resting HR', val: `${avgHR} bpm avg`, dot: hrDot });
+  }
 
   // Weight trend (cutting: falling is good)
   if (weightChange !== null) {
