@@ -30,6 +30,14 @@ function getExternalSteps(dateStr) { return getExternalMetric('steps', dateStr);
 function getExternalActiveEnergy(dateStr) { return getExternalMetric('activeEnergy', dateStr); }
 function getExternalExerciseMinutes(dateStr) { return getExternalMetric('exerciseMinutes', dateStr); }
 function getExternalRestingHR(dateStr) { return getExternalMetric('restingHR', dateStr); }
+// Hours slept, keyed by the morning you woke up. Values over 24 are assumed
+// to be minutes (Shortcut unit set to min instead of hr) and normalized.
+function getExternalSleep(dateStr) {
+  const v = getExternalMetric('sleep', dateStr);
+  if (v === null) return null;
+  const hours = v > 24 ? v / 60 : v;
+  return Math.round(hours * 10) / 10;
+}
 
 function loadExternalData() {
   try {

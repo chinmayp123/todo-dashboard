@@ -12,6 +12,7 @@ Supported metrics and where they show up:
 | `external/activeEnergy/<date>` | Active Energy (Sum) | Replaces the MET burn estimate everywhere — Net Cals tile, Gym "Active Burn" target, Diet net line |
 | `external/exerciseMinutes/<date>` | Apple Exercise Time (Sum) | Exercise tile on the dashboard (default goal 30 min) |
 | `external/restingHR/<date>` | Resting Heart Rate (Average) | Resting HR row in the Weekly Report |
+| `external/sleep/<date>` | Sleep, Value is Asleep (Sum, in hr) | Sleep tile on the dashboard (goal 8h) + Weekly Report row. Keyed by wake-up date; values >24 are treated as minutes and normalized |
 
 Steps work from the iPhone alone. The other three need an Apple Watch (that's what measures active energy, exercise minutes, and resting HR). When `activeEnergy` exists for a date, the app trusts it outright and stops adding its own workout estimate + walking burn — the watch number already includes both.
 
@@ -58,7 +59,13 @@ Append these actions to the same shortcut, after the three above. Each pair foll
    `.../external/restingHR/[Formatted Date].json`
    Method **PUT**, Request Body = the result from action 8.
 
-Careful when inserting each Request Body: Shortcuts offers every prior action's output — pick the **matching** Find Health Samples result (tap the variable, check its source action), not the first one.
+10. **Find Health Samples** — Type: **Sleep** · **Add Filter: Value is Asleep** (excludes In Bed time) · Start Date **is in the last 1 day** (NOT "is today" — last night's sleep started yesterday evening) · Unit **hr** · Group By **None**.
+11. **Calculate Statistics** — Operation: **Sum**, input: the Sleep samples from action 10 (needed because sleep can't Group By cleanly across midnight).
+12. **Get Contents of URL** — URL:
+    `.../external/sleep/[Formatted Date].json`
+    Method **PUT**, Request Body = the **Calculated Statistics** result from action 11.
+
+Careful when inserting each Request Body: Shortcuts offers every prior action's output — pick the **matching** Find Health Samples result (tap the variable, check its source action), not the first one. If two variables look identical, insert one, tap it → **Reveal Action** — it highlights the card it comes from.
 
 Run it once manually. iOS will prompt for Health access on first run — tap **Allow** for all requested categories.
 

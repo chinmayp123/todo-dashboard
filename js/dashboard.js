@@ -52,6 +52,7 @@ function renderHealthStrip(today) {
   const totalBurn = watchBurn !== null ? Math.round(watchBurn) : workoutBurn + walkBurn;
   const net = cal - totalBurn;
   const exMin = (typeof getExternalExerciseMinutes === 'function') ? getExternalExerciseMinutes(today) : null;
+  const sleepH = (typeof getExternalSleep === 'function') ? getExternalSleep(today) : null;
 
   const tiles = [
     { view: 'diet', label: 'Calories', value: cal, sub: `/ ${g.calories}`, pct: Math.min(100, (cal / g.calories) * 100), color: calOver ? 'var(--red)' : 'var(--accent)' },
@@ -60,6 +61,7 @@ function renderHealthStrip(today) {
     { view: 'diet', label: 'Water', value: `${water} oz`, sub: `/ ${g.water} oz`, pct: Math.min(100, (water / g.water) * 100), color: '#38bdf8' },
     ...(steps !== null ? [{ view: 'gym', label: 'Steps', value: steps.toLocaleString(), sub: `/ ${(g.steps || 8000).toLocaleString()}`, pct: Math.min(100, (steps / (g.steps || 8000)) * 100), color: '#22c55e' }] : []),
     ...(exMin !== null ? [{ view: 'gym', label: 'Exercise', value: `${exMin} min`, sub: `/ ${g.exerciseMin || 30} min`, pct: Math.min(100, (exMin / (g.exerciseMin || 30)) * 100), color: '#f59e0b' }] : []),
+    ...(sleepH !== null ? [{ view: 'gym', label: 'Sleep', value: `${sleepH}h`, sub: `/ ${g.sleep || 8}h`, pct: Math.min(100, (sleepH / (g.sleep || 8)) * 100), color: '#a78bfa' }] : []),
     { view: 'gym', label: 'Weight', value: latestW !== null ? `${latestW} lbs` : '—', sub: latestW !== null ? `→ ${g.weight} lbs` : 'log a weigh-in',
       pct: null, note: latestW !== null ? `${Math.round(Math.abs(latestW - g.weight) * 10) / 10} lbs to go` : 'Tap to log your first', color: 'var(--purple)' },
   ];
@@ -201,6 +203,16 @@ function renderWeeklyReport() {
   }
   const avgHR = hrDays ? Math.round(hrSum / hrDays) : null;
 
+  // Sleep: watch-synced, averaged over nights with data
+  let sleepDays = 0, sleepSum = 0;
+  if (typeof getExternalSleep === 'function') {
+    days.forEach(day => {
+      const h = getExternalSleep(day);
+      if (h !== null) { sleepDays++; sleepSum += h; }
+    });
+  }
+  const avgSleep = sleepDays ? Math.round((sleepSum / sleepDays) * 10) / 10 : null;
+
   // Weight: smoothed trend change over roughly the last week
   let weightChange = null;
   if (typeof weightTrendSeries === 'function') {
@@ -243,6 +255,13 @@ function renderWeeklyReport() {
   if (avgHR !== null) {
     const hrDot = avgHR <= 65 ? 'good' : avgHR <= 75 ? 'warn' : 'bad';
     rows.push({ label: 'Resting HR', val: `${avgHR} bpm avg`, dot: hrDot });
+  }
+
+  // Sleep (only when the watch has synced data) — poor sleep sabotages a cut:
+  // it drives hunger up and training quality down
+  if (avgSleep !== null) {
+    const sleepDot = avgSleep >= 7 ? 'good' : avgSleep >= 6 ? 'warn' : 'bad';
+    rows.push({ label: 'Sleep', val: `${avgSleep}h avg / ${g.sleep || 8}h`, dot: sleepDot });
   }
 
   // Weight trend (cutting: falling is good)
