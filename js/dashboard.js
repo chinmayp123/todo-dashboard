@@ -161,16 +161,20 @@ function renderWeeklyReport() {
 
   // Diet: averages over logged days only
   const diet = state.diet || [];
-  let dietDays = 0, calSum = 0, proteinSum = 0;
+  let dietDays = 0, calSum = 0, proteinSum = 0, carbSum = 0, fatSum = 0;
   days.forEach(day => {
     const entries = diet.filter(e => e.date === day);
     if (!entries.length) return;
     dietDays++;
     calSum += entries.reduce((s, e) => s + (e.calories || 0), 0);
     proteinSum += entries.reduce((s, e) => s + (e.protein || 0), 0);
+    carbSum += entries.reduce((s, e) => s + (e.carbs || 0), 0);
+    fatSum += entries.reduce((s, e) => s + (e.fat || 0), 0);
   });
   const avgCal = dietDays ? Math.round(calSum / dietDays) : 0;
   const avgProtein = dietDays ? Math.round(proteinSum / dietDays) : 0;
+  const avgCarbs = dietDays ? Math.round(carbSum / dietDays) : 0;
+  const avgFat = dietDays ? Math.round(fatSum / dietDays) : 0;
 
   // Training: days with any gym entry, plus total sets
   const gym = state.gym || [];
@@ -239,9 +243,17 @@ function renderWeeklyReport() {
     rows.push({ label: 'Calories', val: 'no days logged', dot: 'warn' });
   }
 
-  // Protein
+  // Protein (cutting: hitting the target protects muscle, so more is good)
   const proteinDot = avgProtein >= g.protein * 0.9 ? 'good' : avgProtein >= g.protein * 0.7 ? 'warn' : 'bad';
   rows.push({ label: 'Protein', val: `${avgProtein}g avg / ${g.protein}g`, dot: proteinDot });
+
+  // Carbs & Fat (cutting: at or under budget is good, like calories)
+  if (dietDays) {
+    const carbDot = avgCarbs <= g.carbs ? 'good' : avgCarbs <= g.carbs * 1.15 ? 'warn' : 'bad';
+    rows.push({ label: 'Carbs', val: `${avgCarbs}g avg / ${g.carbs}g`, dot: carbDot });
+    const fatDot = avgFat <= g.fat ? 'good' : avgFat <= g.fat * 1.15 ? 'warn' : 'bad';
+    rows.push({ label: 'Fat', val: `${avgFat}g avg / ${g.fat}g`, dot: fatDot });
+  }
 
   // Training
   const trainDot = daysTrained >= 4 ? 'good' : daysTrained >= 2 ? 'warn' : 'bad';
