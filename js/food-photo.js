@@ -226,6 +226,13 @@ function bindPhotoEvents() {
   const snapBtn = $('#snapMealBtn');
   if (!snapBtn) return;
 
+  // First-time setup: if no key is saved yet, show the paste field up front
+  // so it's obvious where the key goes. It collapses once a key is saved.
+  if (!getAnthropicKey()) {
+    const setup = $('#photoKeySetup');
+    if (setup) setup.hidden = false;
+  }
+
   snapBtn.addEventListener('click', () => {
     if (!getAnthropicKey()) {
       $('#photoKeySetup').hidden = false;

@@ -5064,3 +5064,6 @@ button:not(:disabled):active {
   color: var(--text-muted); padding: 5px 10px; font-size: 0.76rem; cursor: pointer;
 }
 .voice-undo-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+/* Let the [hidden] attribute win over the flex display above (toggle fix) */
+.photo-key-setup[hidden] { display: none; }
