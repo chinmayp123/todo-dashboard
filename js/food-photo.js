@@ -6,6 +6,7 @@ const FOOD_PHOTO_MODEL = 'claude-opus-4-8'; // cheaper: 'claude-sonnet-5' or 'cl
 const FOOD_PHOTO_KEY = 'tf_anthropic_key';
 
 let photoItems = null; // items awaiting confirmation
+let lastPhotoDataUrl = null; // thumbnail of the most recent analyzed photo
 
 function getAnthropicKey() {
   return localStorage.getItem(FOOD_PHOTO_KEY) || '';
@@ -44,8 +45,9 @@ const PHOTO_SCHEMA = {
           protein: { type: 'number' },
           carbs: { type: 'number' },
           fat: { type: 'number' },
+          confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
         },
-        required: ['food', 'portion', 'calories', 'protein', 'carbs', 'fat'],
+        required: ['food', 'portion', 'calories', 'protein', 'carbs', 'fat', 'confidence'],
         additionalProperties: false,
       },
     },
@@ -62,6 +64,7 @@ async function analyzeMealPhoto(file) {
   let dataUrl;
   try {
     dataUrl = await resizePhotoToJpeg(file, 1024);
+    lastPhotoDataUrl = dataUrl;
   } catch (e) {
     resultEl.innerHTML = '<div class="photo-status error">Could not read that image — try another photo.</div>';
     return;
@@ -79,7 +82,7 @@ async function analyzeMealPhoto(file) {
           'Identify every distinct food and drink item in this photo and estimate the macros for the portion actually visible. ' +
           'The user frequently eats South Indian / Telugu food (idli, dosa, pappu charu, sambar, peanut chutney, soya chunk curry, vadiyala curry, rice dishes) — recognize these by name when present. ' +
           'For each item: a short name suitable for a food log, a portion description (e.g. "3 idli", "1 cup"), and realistic calories, protein, carbs, and fat in grams for that visible portion. ' +
-          'Be honest about uncertainty by estimating middle-of-range values. If the photo has no recognizable food, return an empty items array.' },
+          'Be honest about uncertainty by estimating middle-of-range values. Also rate your confidence in each item as "high", "medium", or "low" based on how clearly you can identify the food and judge its portion. If the photo has no recognizable food, return an empty items array.' },
       ],
     }],
   };
@@ -137,6 +140,7 @@ async function analyzeMealPhoto(file) {
     protein: Math.max(0, Math.round((Number(it.protein) || 0) * 10) / 10),
     carbs: Math.max(0, Math.round((Number(it.carbs) || 0) * 10) / 10),
     fat: Math.max(0, Math.round((Number(it.fat) || 0) * 10) / 10),
+    confidence: ['high', 'medium', 'low'].includes(it.confidence) ? it.confidence : 'medium',
   }));
   renderPhotoConfirm();
 }
@@ -151,17 +155,23 @@ function renderPhotoConfirm() {
   if (!photoItems || !photoItems.length) { resultEl.innerHTML = ''; return; }
   const totals = photoItems.reduce((a, it) => ({
     calories: a.calories + it.calories, protein: a.protein + it.protein,
-  }), { calories: 0, protein: 0 });
+    carbs: a.carbs + it.carbs, fat: a.fat + it.fat,
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const CONF_LABEL = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence — double-check' };
 
   resultEl.innerHTML = `
     <div class="photo-confirm">
       <div class="photo-confirm-head">
-        <strong>Found ${photoItems.length} item${photoItems.length === 1 ? '' : 's'}</strong>
-        <span class="photo-confirm-totals">~${Math.round(totals.calories)} cal &middot; ${Math.round(totals.protein)}g P</span>
+        ${lastPhotoDataUrl ? `<img class="photo-confirm-thumb" src="${lastPhotoDataUrl}" alt="your meal">` : ''}
+        <div class="photo-confirm-head-info">
+          <strong>Found ${photoItems.length} item${photoItems.length === 1 ? '' : 's'}</strong>
+          <span class="photo-confirm-totals">~${Math.round(totals.calories)} cal &middot; ${Math.round(totals.protein)}g P &middot; ${Math.round(totals.carbs)}g C &middot; ${Math.round(totals.fat)}g F</span>
+        </div>
       </div>
       ${photoItems.map((it, i) => `
         <div class="photo-item" data-idx="${i}">
           <div class="photo-item-top">
+            <span class="photo-conf photo-conf-${it.confidence}" title="${CONF_LABEL[it.confidence]}"></span>
             <input type="text" class="photo-item-name" value="${esc(it.food)}" data-idx="${i}">
             <span class="photo-item-portion">${esc(it.portion)}</span>
             <button type="button" class="photo-item-del" data-idx="${i}" title="Remove">&times;</button>

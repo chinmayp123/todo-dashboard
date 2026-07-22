@@ -5474,3 +5474,174 @@ html[data-theme="light"] .more-sheet-overlay { background: rgba(20, 20, 45, 0.35
 .diet-meal-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
 .diet-meal-cal-val { font-size: 12px; font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .diet-meal-macro { font-size: 11px; color: var(--text-muted); margin-left: 8px; }
+
+
+/* ---- photo-confirm thumbnail + confidence dots (3a rebuild) ---- */
+.photo-confirm-head { gap: 12px; }
+.photo-confirm-thumb {
+  width: 52px; height: 52px; border-radius: 9px;
+  object-fit: cover; flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.photo-confirm-head-info { display: flex; flex-direction: column; gap: 3px; }
+.photo-conf {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  box-shadow: 0 0 0 3px transparent;
+}
+.photo-conf-high { background: var(--green); }
+.photo-conf-medium { background: var(--yellow); }
+.photo-conf-low { background: var(--red); }
+
+
+/* ==========================================================================
+   Daylign design-pass — batch 3 (command palette + serving stepper + touch delete)
+   ========================================================================== */
+
+/* ---- Command palette (Cmd/Ctrl-K) ---- */
+.cmd-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: none; align-items: flex-start; justify-content: center;
+  padding-top: 12vh;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.cmd-overlay.open { display: flex; }
+.cmd-box {
+  width: min(600px, 92vw);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  overflow: hidden;
+}
+.cmd-input-row { display: flex; align-items: center; gap: 11px; padding: 15px 17px; border-bottom: 1px solid var(--border); color: var(--accent-hover); }
+.cmd-input-row input { flex: 1; background: none; border: none; outline: none; color: var(--text-primary); font-size: 16px; font-family: var(--font-body); }
+.cmd-input-row input::placeholder { color: var(--text-muted); }
+.cmd-esc { font-size: 11px; font-weight: 600; color: var(--text-muted); background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; }
+.cmd-results { max-height: 46vh; overflow-y: auto; padding: 6px; }
+.cmd-group { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); padding: 10px 10px 5px; }
+.cmd-row { display: flex; align-items: baseline; gap: 10px; padding: 10px 11px; border-radius: 9px; cursor: pointer; }
+.cmd-row.sel { background: var(--accent-glow); }
+.cmd-row-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmd-row.sel .cmd-row-label { color: var(--accent-hover); }
+.cmd-row-sub { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; }
+.cmd-run .cmd-row-label { font-weight: 600; }
+.cmd-empty { padding: 26px; text-align: center; color: var(--text-muted); font-size: 13px; }
+.cmd-foot { display: flex; gap: 16px; padding: 9px 15px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); }
+.cmd-foot b { color: var(--text-secondary); font-weight: 700; }
+
+/* ---- Serving stepper (Diet) ---- */
+.serv-stepper-group input {
+  text-align: center;
+  border-radius: 0 !important;
+  -moz-appearance: textfield;
+}
+.serv-stepper-group input::-webkit-outer-spin-button,
+.serv-stepper-group input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.serv-step {
+  width: 42px; min-height: 44px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--accent-hover);
+  font-size: 20px; font-weight: 600; line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.serv-step:first-of-type { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.serv-step:last-of-type { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.serv-step:hover { background: var(--bg-hover); }
+.serv-stepper-group { }
+.serv-stepper-group > label { display: block; }
+.serv-stepper-group input, .serv-stepper-group .serv-step { display: inline-block; vertical-align: middle; }
+.serv-stepper-group input { border-left: 0 !important; border-right: 0 !important; width: 64px; }
+
+/* ---- Delete affordances reachable on touch (no hover on phones) ---- */
+@media (hover: none) {
+  .sidebar-del-btn,
+  .diet-delete-food,
+  .diet-custom-del,
+  .diet-custom-edit,
+  .schedule-event-remove,
+  .photo-item-del {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* ---- Dashboard: slim the stat strip so the Today hero leads ---- */
+.stats-grid .stat-card { padding: 13px 15px; }
+.stats-grid .stat-number { font-size: 22px; }
+.stats-grid .stat-icon { width: 38px; height: 38px; }
+.stats-grid .stat-icon svg { width: 20px; height: 20px; }
+
+
+/* ==========================================================================
+   Daylign design-pass — batch 4 (desktop Diet redesign: nutrition-led, calmer density)
+   ========================================================================== */
+
+/* Lead with the summary as the hero; Log Food + Recent Foods become a right rail.
+   Mirrors the mobile hierarchy (nutrition first) instead of 3 equal columns. */
+@media (min-width: 1024px) {
+  .diet-layout {
+    grid-template-columns: minmax(0, 1fr) 372px;
+    grid-template-areas: "summary log" "summary recent";
+    align-items: start;
+    gap: 20px;
+  }
+  .diet-summary-card { grid-area: summary; }
+  .diet-log-card { grid-area: log; }
+  .diet-history-card { grid-area: recent; }
+}
+/* Below the rail width, stack cleanly — nutrition still first. */
+@media (max-width: 1023px) {
+  .diet-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas: "summary" "log" "recent";
+    gap: 16px;
+  }
+  .diet-summary-card { grid-area: summary; }
+  .diet-log-card { grid-area: log; }
+  .diet-history-card { grid-area: recent; }
+}
+
+/* Softer, roomier cards across the view */
+.diet-layout .card { padding: 22px 24px; }
+.diet-summary-card { padding: 26px 28px; }
+
+/* --- Today's Nutrition: give it hero weight --- */
+.diet-summary-header { margin-bottom: 20px; }
+.diet-summary-header h2 { font-family: var(--font-display); font-size: 21px; font-weight: 700; letter-spacing: -.01em; }
+
+/* Goal rows: more air, cleaner numbers, calmer bars */
+.diet-goals { display: flex; flex-direction: column; gap: 16px; margin-bottom: 8px; }
+.diet-goal-row { display: flex; flex-direction: column; gap: 7px; }
+.diet-goal-header { display: flex; align-items: baseline; justify-content: space-between; }
+.diet-goal-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+.diet-goal-nums { font-variant-numeric: tabular-nums; }
+.diet-goal-current { font-size: 17px; font-weight: 700; }
+.diet-goal-sep { color: var(--text-muted); margin: 0 3px; }
+.diet-goal-target { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+.diet-goal-bar-track { height: 7px; border-radius: 4px; background: var(--bg-input); overflow: hidden; }
+.diet-goal-bar-fill { height: 100%; border-radius: 4px; }
+.diet-goal-remaining { font-size: 11.5px; color: var(--text-muted); }
+
+/* The "Skip or shrink" coaching block — quieter, not shouting */
+.diet-yesterday, .diet-review { margin-top: 18px; }
+
+/* Water tracker: consistent, roomy pill row */
+.water-tracker { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+.water-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Logged meals grouped with clear rhythm */
+.diet-meals-list { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
+.diet-meal-group { display: flex; flex-direction: column; gap: 7px; }
+
+/* Right rail: tighter, scannable recent foods + history */
+.diet-history-card h2 { font-size: 15px; font-weight: 700; }
+.diet-history-title { margin-top: 22px; }
+
+/* Log Food card: calmer form, primary action stands out */
+.diet-log-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.diet-food-form { display: flex; flex-direction: column; gap: 14px; }
+.diet-macro-inputs { gap: 10px; }

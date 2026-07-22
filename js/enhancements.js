@@ -166,6 +166,102 @@
     });
   }
 
+  // ---------- Serving stepper (Diet log) ----------
+  function updateAddLabel() {
+    const btn = $('#dietSaveBtn'); if (!btn) return;
+    const cal = Number(($('#dietCalories') || {}).value) || 0;
+    btn.textContent = cal > 0 ? `+ Add Food \u00b7 ${cal} cal` : '+ Add Food';
+  }
+  function setupServingStepper() {
+    const inp = $('#dietServings');
+    if (!inp || $('.serv-step')) return;
+    const grp = inp.closest('.form-group'); if (grp) grp.classList.add('serv-stepper-group');
+    const mk = (txt, delta) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'serv-step'; b.textContent = txt;
+      b.addEventListener('click', () => {
+        let v = Number(inp.value) || 1;
+        v = Math.max(0.5, Math.round((v + delta) * 2) / 2);
+        inp.value = v;
+        inp.dispatchEvent(new Event('input', { bubbles: true })); // diet.js recalcs macros
+        updateAddLabel();
+      });
+      return b;
+    };
+    inp.parentNode.insertBefore(mk('\u2212', -0.5), inp);
+    inp.parentNode.insertBefore(mk('+', 0.5), inp.nextSibling);
+    const cal = $('#dietCalories'); if (cal) cal.addEventListener('input', updateAddLabel);
+    updateAddLabel();
+  }
+
+  // ---------- Command palette (\u2318K) ----------
+  const VIEWS = [['dashboard','Dashboard'],['tasks','All Tasks'],['board','Board'],['calendar','Calendar'],['gym','Gym'],['diet','Diet'],['settings','Settings']];
+  let cmdRows = [], cmdSel = 0;
+  function ensurePalette() {
+    if ($('#cmdPalette')) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'cmdPalette'; wrap.className = 'cmd-overlay';
+    wrap.innerHTML = `<div class="cmd-box">
+        <div class="cmd-input-row"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="cmdInput" type="text" placeholder="Search tasks, foods, exercises \u2014 or type a command\u2026" autocomplete="off">
+          <kbd class="cmd-esc">esc</kbd></div>
+        <div id="cmdResults" class="cmd-results"></div>
+        <div class="cmd-foot"><span><b>\u2191\u2193</b> navigate</span><span><b>\u21b5</b> open</span><span><b>\u2318K</b> anytime</span></div>
+      </div>`;
+    document.body.appendChild(wrap);
+    wrap.addEventListener('click', e => { if (e.target === wrap) closePalette(); });
+    const input = $('#cmdInput');
+    input.addEventListener('input', () => renderPaletteResults(input.value));
+    input.addEventListener('keydown', paletteKeydown);
+  }
+  function openPalette() {
+    ensurePalette();
+    const p = $('#cmdPalette'); p.classList.add('open');
+    const input = $('#cmdInput'); input.value = ''; renderPaletteResults('');
+    setTimeout(() => input.focus(), 30);
+  }
+  function closePalette() { const p = $('#cmdPalette'); if (p) p.classList.remove('open'); }
+  function renderPaletteResults(q) {
+    const query = (q || '').trim().toLowerCase();
+    const rows = [];
+    VIEWS.filter(v => !query || v[1].toLowerCase().includes(query))
+      .forEach(v => rows.push({ group: 'Go to', label: v[1], run: () => { closePalette(); if (typeof switchView === 'function') switchView(v[0]); } }));
+    if (query && typeof state !== 'undefined') {
+      (state.tasks || []).filter(t => t.name && t.name.toLowerCase().includes(query)).slice(0, 6)
+        .forEach(t => rows.push({ group: 'Tasks', label: t.name, sub: (t.status || '').replace('-', ' '), run: () => { closePalette(); if (typeof openModal === 'function') openModal(t.id); } }));
+      Object.keys(state.customFoods || {}).filter(f => f.toLowerCase().includes(query)).slice(0, 5)
+        .forEach(f => rows.push({ group: 'Foods', label: f, sub: 'log in Diet', run: () => { closePalette(); if (typeof switchView === 'function') switchView('diet'); const inp = $('#dietFoodName'); if (inp) { inp.value = f; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.focus(); } } }));
+      [...new Set((state.gym || []).map(e => e.exercise))].filter(x => x && x.toLowerCase().includes(query)).slice(0, 5)
+        .forEach(x => rows.push({ group: 'Exercises', label: x, sub: 'open Gym', run: () => { closePalette(); if (typeof switchView === 'function') switchView('gym'); const inp = $('#gymExerciseName'); if (inp) { inp.value = x; inp.focus(); } } }));
+      rows.push({ group: 'Command', label: `Run \u201c${q.trim()}\u201d as a command`, sub: 'e.g. log 40 oz water, add task pay rent tomorrow', cmd: true, run: () => { closePalette(); if (typeof runVoiceCommand === 'function') runVoiceCommand(q.trim()); } });
+    }
+    cmdRows = rows; cmdSel = 0;
+    const host = $('#cmdResults');
+    if (!rows.length) { host.innerHTML = '<div class="cmd-empty">No matches</div>'; return; }
+    let lastGroup = '';
+    host.innerHTML = rows.map((r, i) => {
+      const head = r.group !== lastGroup ? `<div class="cmd-group">${r.group}</div>` : '';
+      lastGroup = r.group;
+      return head + `<div class="cmd-row${i === 0 ? ' sel' : ''}${r.cmd ? ' cmd-run' : ''}" data-idx="${i}">
+          <span class="cmd-row-label">${r.label}</span>${r.sub ? `<span class="cmd-row-sub">${r.sub}</span>` : ''}</div>`;
+    }).join('');
+    $$('.cmd-row', host).forEach(el => {
+      el.addEventListener('mouseenter', () => setPaletteSel(Number(el.dataset.idx)));
+      el.addEventListener('click', () => { const r = cmdRows[Number(el.dataset.idx)]; if (r) r.run(); });
+    });
+  }
+  function setPaletteSel(i) {
+    cmdSel = Math.max(0, Math.min(cmdRows.length - 1, i));
+    $$('.cmd-row').forEach(el => el.classList.toggle('sel', Number(el.dataset.idx) === cmdSel));
+    const sel = $('.cmd-row.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+  function paletteKeydown(e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setPaletteSel(cmdSel + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setPaletteSel(cmdSel - 1); }
+    else if (e.key === 'Enter') { e.preventDefault(); const r = cmdRows[cmdSel]; if (r) r.run(); }
+    else if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+  }
+
   // ---------- Wrap globals so our extras rebuild on every render ----------
   function wrap(name, extra) {
     const fn = window[name];
@@ -197,18 +293,21 @@
     updateBoardCounts();
     $$('.nav-btn, .more-item, .bottom-nav-btn').forEach(b => b.addEventListener('click', () => setTimeout(updateBoardCounts, 80)));
 
-    // Cmd/Ctrl-K → the command palette (reuses the natural-language voice panel)
+    // Cmd/Ctrl-K → the command palette (fuzzy search across the app + run NL commands)
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        if (typeof openVoicePanel === 'function') openVoicePanel();
+        openPalette();
       }
       if (e.key === 'Escape') closeMore();
     });
 
+    setupServingStepper();
+
     // Hook renders and paint our extras once for the initial view.
     wrap('renderDashboard', buildTodayHero);
     wrap('renderCalendar', buildAgenda);
+    wrap('renderDiet', function () { setupServingStepper(); updateAddLabel(); });
     buildTodayHero();
     buildAgenda();
   }
