@@ -5067,3 +5067,222 @@ button:not(:disabled):active {
 
 /* Let the [hidden] attribute win over the flex display above (toggle fix) */
 .photo-key-setup[hidden] { display: none; }
+
+
+/* ==========================================================================
+   Daylign design-pass enhancements (appended — overrides by cascade order)
+   ========================================================================== */
+
+/* ---- Sidebar theme toggle (desktop) ---- */
+.sidebar-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  text-align: left;
+  width: 100%;
+  margin-top: 2px;
+}
+.sidebar-theme-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ---- Bottom-nav "More" button (matches existing bottom-nav items) ---- */
+.bottom-nav .more-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+}
+.bottom-nav .more-nav-btn span { font-size: 10px; }
+
+/* ---- "More" sheet ---- */
+.more-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0,0,0,.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .22s ease;
+}
+.more-sheet-overlay.open { opacity: 1; visibility: visible; }
+.more-sheet {
+  width: 100%;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 -20px 50px rgba(0,0,0,.5);
+  transform: translateY(100%);
+  transition: transform .26s cubic-bezier(.22,.61,.36,1);
+}
+.more-sheet-overlay.open .more-sheet { transform: translateY(0); }
+.more-sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border); margin: 0 auto 14px;
+}
+.more-sheet-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-muted);
+  padding: 6px 8px 8px;
+}
+.more-item {
+  display: flex; align-items: center; gap: 14px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 15px; font-weight: 500;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.more-item:active { background: var(--bg-hover); }
+.more-item svg { color: var(--accent-hover); flex-shrink: 0; }
+.more-item-toggle { justify-content: space-between; }
+.more-item-toggle-left { display: flex; align-items: center; gap: 14px; }
+.more-toggle-state {
+  font-size: 12px; font-weight: 700;
+  color: var(--accent-hover);
+  background: var(--accent-glow);
+  padding: 5px 12px; border-radius: 999px;
+}
+
+/* ---- Board single-column switch (phones) ---- */
+.board-mobile-switch { display: none; }
+@media (max-width: 900px) {
+  .board-mobile-switch {
+    display: flex;
+    gap: 3px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 3px;
+    margin-bottom: 14px;
+  }
+  .bms-btn {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px; font-weight: 600;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  .bms-btn.active { background: var(--accent); color: #fff; }
+  .bms-count { opacity: .7; font-weight: 700; }
+  .bms-btn.active .bms-count { opacity: .85; }
+
+  /* Show only the selected column; stack it full width */
+  .board { display: block !important; }
+  .board-column { width: auto !important; margin-bottom: 0; }
+  .board[data-mobile-col="todo"] .board-column:not([data-status="todo"]),
+  .board[data-mobile-col="in-progress"] .board-column:not([data-status="in-progress"]),
+  .board[data-mobile-col="done"] .board-column:not([data-status="done"]) {
+    display: none !important;
+  }
+  /* The switch already labels the column — hide the in-column header on mobile */
+  .board-column .column-header { display: none; }
+}
+
+/* ---- Touch targets (phones) ---- */
+@media (max-width: 900px) {
+  .water-btns { gap: 8px; }
+  .water-btn {
+    min-height: 46px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 12px;
+  }
+  .diet-food-input,
+  .diet-macro-inputs input,
+  .diet-portion-row input,
+  .diet-portion-row select,
+  .gym-exercise-input {
+    min-height: 46px;
+    font-size: 15px;
+  }
+  .diet-macro-inputs { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .diet-save-btn,
+  .diet-save-custom-btn,
+  .gym-save-btn,
+  .gym-add-set-btn,
+  .gym-rest-btn,
+  .photo-snap-btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    min-height: 46px;
+  }
+  .gym-date-nav, .cal-nav { width: 40px; height: 40px; }
+  .weight-log-btn { min-height: 46px; }
+}
+
+/* ==========================================================================
+   Light theme — token swap only (structure unchanged). Toggle persists in
+   localStorage('daylign_theme'); default stays dark.
+   ========================================================================== */
+html[data-theme="light"] {
+  --bg-primary: #f5f5fa;
+  --bg-secondary: #ececf3;
+  --bg-card: #ffffff;
+  --bg-hover: #e7e7f0;
+  --bg-input: #ffffff;
+  --border: #e2e2ec;
+  --text-primary: #1a1a24;
+  --text-secondary: #56566a;
+  --text-muted: #8a8a9c;
+  --accent: #6d6af8;
+  --accent-hover: #5b58e0;
+  --accent-glow: rgba(109, 106, 248, 0.12);
+  --green: #0d9e6e;   --green-bg: rgba(13, 158, 110, 0.12);
+  --yellow: #b7860b;  --yellow-bg: rgba(183, 134, 11, 0.14);
+  --red: #dc4d4d;     --red-bg: rgba(220, 77, 77, 0.10);
+  --blue: #2f7fe0;    --blue-bg: rgba(47, 127, 224, 0.12);
+  --purple: #7c6df0;
+  --shadow: 0 8px 32px rgba(20, 20, 45, 0.10);
+}
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(109, 106, 248, 0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 25%, rgba(56, 189, 248, 0.07), transparent 55%),
+    var(--bg-primary);
+}
+/* Keep the accent gradient buttons white-on-color and readable in light mode */
+html[data-theme="light"] .btn-primary { color: #fff; }
+html[data-theme="light"] .bms-btn.active,
+html[data-theme="light"] .water-btn { color: inherit; }
+
+/* Light-mode overrides for the hardcoded glass surfaces */
+html[data-theme="light"] .header {
+  background: rgba(245, 245, 250, 0.72) !important;
+  border-bottom-color: rgba(20, 20, 45, 0.07) !important;
+}
+html[data-theme="light"] .bottom-nav {
+  background: rgba(245, 245, 250, 0.85) !important;
+  border-top-color: rgba(20, 20, 45, 0.08) !important;
+}
+html[data-theme="light"] .sidebar-overlay,
+html[data-theme="light"] .more-sheet-overlay { background: rgba(20, 20, 45, 0.35); }
