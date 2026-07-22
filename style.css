@@ -5286,3 +5286,191 @@ html[data-theme="light"] .bottom-nav {
 }
 html[data-theme="light"] .sidebar-overlay,
 html[data-theme="light"] .more-sheet-overlay { background: rgba(20, 20, 45, 0.35); }
+
+
+/* ==========================================================================
+   Daylign design-pass enhancements — batch 2 (dashboard hero, reminders rail, calendar agenda, food polish)
+   ========================================================================== */
+
+/* ---- Dashboard "Today" hero ---- */
+.today-hero-wrap { margin-bottom: 16px; }
+.today-hero {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: linear-gradient(150deg, color-mix(in oklab, var(--accent) 12%, var(--bg-card)), var(--bg-card));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.th-ring {
+  width: 96px; height: 96px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.th-ring-inner {
+  width: 74px; height: 74px; border-radius: 50%;
+  background: var(--bg-card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.th-ring-val { font-family: var(--font-display); font-size: 21px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.th-ring-lbl { font-size: 9px; color: var(--text-muted); }
+.th-body { flex: 1; min-width: 0; }
+.th-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: 5px; }
+.th-text { font-size: 15px; font-weight: 600; line-height: 1.45; color: var(--text-primary); text-wrap: pretty; }
+.th-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.th-chip { font-size: 11px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--accent-glow); color: var(--accent-hover); }
+.th-chip em { font-style: normal; opacity: .7; font-weight: 500; }
+.th-chip-green { background: var(--green-bg); color: var(--green); }
+.th-chip-blue { background: var(--blue-bg); color: var(--blue); }
+.th-chip-accent { background: var(--accent-glow); color: var(--accent-hover); }
+@media (max-width: 700px) {
+  .today-hero { flex-direction: column; text-align: center; gap: 16px; }
+  .th-chips { justify-content: center; }
+}
+
+/* ---- Reminders as a scannable focus rail ---- */
+.reminders-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.reminder-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+}
+.reminder-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.reminder-body { flex: 1; min-width: 0; }
+.reminder-text { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+.reminder-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.35; }
+.reminder-nav-btn, .reminder-done-btn {
+  flex-shrink: 0;
+  border: none;
+  background: var(--accent-glow);
+  color: var(--accent-hover);
+  font-size: 12px; font-weight: 600;
+  padding: 8px 13px;
+  border-radius: 9px;
+  cursor: pointer;
+  min-height: 36px;
+  transition: background .15s;
+}
+.reminder-done-btn { background: var(--green-bg); color: var(--green); }
+.reminder-nav-btn:hover { background: color-mix(in oklab, var(--accent) 26%, transparent); }
+
+/* ---- Calendar agenda (phones) ---- */
+.calendar-agenda { display: none; }
+@media (max-width: 900px) {
+  .calendar-agenda { display: flex; flex-direction: column; gap: 18px; }
+  #calMonthView, #calWeekView { display: none !important; }
+  .cal-view-toggle { display: none !important; }
+}
+.agenda-day.past { opacity: .55; }
+.agenda-day-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
+.agenda-dow { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.agenda-day.today .agenda-dow { color: var(--accent-hover); }
+.agenda-date { font-size: 12px; color: var(--text-muted); }
+.agenda-rows { display: flex; flex-direction: column; gap: 7px; }
+.agenda-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 11px 13px;
+  min-height: 46px;
+  cursor: pointer;
+}
+.agenda-row-name { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+.agenda-row-sub { font-size: 11.5px; color: var(--text-muted); }
+.agenda-due { color: var(--red); font-weight: 600; }
+.agenda-holiday { cursor: default; }
+.agenda-holiday .agenda-row-name { color: var(--purple); font-weight: 600; }
+.agenda-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px; }
+
+/* ---- Food logging polish (photo confirm · search · day log) ---- */
+.photo-confirm {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.photo-confirm-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.photo-confirm-totals { font-size: 12px; font-weight: 700; color: var(--accent-hover); font-variant-numeric: tabular-nums; }
+.photo-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 12px;
+  margin: 8px;
+}
+.photo-item-top { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.photo-item-name {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-primary);
+  font-size: 13.5px; font-weight: 600;
+  min-height: 40px;
+}
+.photo-item-portion { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.photo-item-del {
+  border: none; background: transparent; color: var(--text-muted);
+  font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px;
+}
+.photo-item-macros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.photo-item-macros label {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 10px; color: var(--text-muted); text-align: center;
+}
+.photo-item-macros input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 4px;
+  color: var(--text-primary);
+  font-size: 13px; font-weight: 600; text-align: center;
+  min-height: 38px;
+  font-variant-numeric: tabular-nums;
+}
+.photo-confirm-actions { display: flex; align-items: center; gap: 8px; padding: 4px 8px 10px; }
+.photo-confirm-actions #photoMeal { flex: 0 0 auto; }
+.photo-confirm-actions #photoAddAllBtn { flex: 1; }
+.photo-confirm-note { font-size: 10.5px; color: var(--text-muted); text-align: center; padding: 0 12px 12px; line-height: 1.5; }
+
+/* My Food badge + search rows */
+.diet-custom-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: .03em;
+  padding: 2px 7px; border-radius: 6px;
+  background: var(--accent-glow); color: var(--accent-hover);
+  vertical-align: middle; margin-left: 4px;
+}
+.diet-search-item { transition: background .12s; }
+.diet-search-item:hover { background: var(--bg-hover); }
+.diet-search-per { color: var(--text-muted); }
+
+/* Day log — meal groups read as tidy sections */
+.diet-meal-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.diet-meal-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+.diet-meal-cal-val { font-size: 12px; font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.diet-meal-macro { font-size: 11px; color: var(--text-muted); margin-left: 8px; }
