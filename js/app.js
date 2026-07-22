@@ -143,6 +143,7 @@ function bindEvents() {
   bindDietEvents();
   bindGoalsEvents();
   if (typeof bindPhotoEvents === 'function') bindPhotoEvents();
+  if (typeof bindVoiceEvents === 'function') bindVoiceEvents();
 
   // Add category / project
   $('#addCategoryBtn').addEventListener('click', handleAddCategory);
