@@ -295,6 +295,28 @@
           <input type="date" id="gymDate" class="gym-date-input">
         </div>
 
+        <!-- Add Exercise (primary action — kept at top so logging never needs a scroll) -->
+        <div class="gym-add-bar">
+          <input type="text" id="gymExerciseName" placeholder="Add exercise..." class="gym-exercise-input" list="exerciseSuggestions" autocomplete="off">
+          <div id="gymLastTime"></div>
+          <datalist id="exerciseSuggestions"></datalist>
+          <div class="gym-sets-inline" id="gymSetsList"></div>
+          <div class="gym-add-actions">
+            <button type="button" class="gym-add-set-btn" id="gymAddSetBtn">+ Set</button>
+            <button type="button" class="gym-rest-btn" data-rest="60">Rest 60s</button>
+            <button type="button" class="gym-rest-btn" data-rest="90">Rest 90s</button>
+            <button type="button" class="btn-primary gym-save-btn" id="gymSaveExerciseBtn">Add Exercise</button>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="gym-stats" id="gymStats"></div>
+
+        <!-- Workout Log -->
+        <div class="gym-workout" id="gymTodayList">
+          <div class="empty-state"><p>No exercises logged yet</p></div>
+        </div>
+
         <!-- Body Weight -->
         <div class="card weight-card">
           <div class="weight-head">
@@ -329,28 +351,6 @@
           </div>
           <div class="streak-stats" id="streakStats"></div>
           <div class="streak-heatmap-wrap"><div class="streak-heatmap" id="streakHeatmap"></div></div>
-        </div>
-
-        <!-- Stats Row -->
-        <div class="gym-stats" id="gymStats"></div>
-
-        <!-- Workout Log -->
-        <div class="gym-workout" id="gymTodayList">
-          <div class="empty-state"><p>No exercises logged yet</p></div>
-        </div>
-
-        <!-- Add Exercise -->
-        <div class="gym-add-bar">
-          <input type="text" id="gymExerciseName" placeholder="Add exercise..." class="gym-exercise-input" list="exerciseSuggestions" autocomplete="off">
-          <div id="gymLastTime"></div>
-          <datalist id="exerciseSuggestions"></datalist>
-          <div class="gym-sets-inline" id="gymSetsList"></div>
-          <div class="gym-add-actions">
-            <button type="button" class="gym-add-set-btn" id="gymAddSetBtn">+ Set</button>
-            <button type="button" class="gym-rest-btn" data-rest="60">Rest 60s</button>
-            <button type="button" class="gym-rest-btn" data-rest="90">Rest 90s</button>
-            <button type="button" class="btn-primary gym-save-btn" id="gymSaveExerciseBtn">Add Exercise</button>
-          </div>
         </div>
       </div>
 
