@@ -142,6 +142,7 @@ function bindEvents() {
   bindGymEvents();
   bindDietEvents();
   bindGoalsEvents();
+  if (typeof bindPhotoEvents === 'function') bindPhotoEvents();
 
   // Add category / project
   $('#addCategoryBtn').addEventListener('click', handleAddCategory);

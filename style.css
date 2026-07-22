@@ -4940,3 +4940,71 @@ button:not(:disabled):active {
 .weekly-focus strong {
   color: var(--accent-hover);
 }
+
+/* ===== Photo food logging ===== */
+.photo-log { margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 12px; }
+.photo-log-row { display: flex; gap: 8px; align-items: center; }
+.photo-snap-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(109, 106, 248, 0.12); color: var(--accent);
+  border: 1px solid rgba(109, 106, 248, 0.35); border-radius: 8px;
+  padding: 9px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+}
+.photo-snap-btn:hover { background: rgba(109, 106, 248, 0.2); }
+.photo-key-btn {
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-muted); padding: 8px 9px; cursor: pointer; display: inline-flex;
+}
+.photo-key-btn:hover { color: var(--text); }
+.photo-key-setup { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.photo-key-setup input {
+  flex: 1; min-width: 220px; background: var(--bg-input, rgba(255,255,255,0.05));
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+  color: var(--text); font-size: 0.82rem;
+}
+.photo-key-note { width: 100%; margin: 2px 0 0; font-size: 0.72rem; color: var(--text-muted); }
+.photo-status { margin-top: 12px; font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+.photo-status.error { color: var(--red); }
+.photo-spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(109,106,248,0.25);
+  border-top-color: var(--accent); border-radius: 50%; flex-shrink: 0;
+  animation: photo-spin 0.8s linear infinite;
+}
+@keyframes photo-spin { to { transform: rotate(360deg); } }
+.photo-confirm { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.photo-confirm-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.photo-confirm-totals { font-size: 0.78rem; color: var(--text-muted); }
+.photo-item { padding: 8px 0; border-top: 1px solid var(--border); }
+.photo-item-top { display: flex; gap: 8px; align-items: center; }
+.photo-item-name {
+  flex: 1; min-width: 0; background: transparent; border: none; border-bottom: 1px dashed var(--border);
+  color: var(--text); font-size: 0.86rem; font-weight: 600; padding: 2px 0;
+}
+.photo-item-portion { font-size: 0.74rem; color: var(--text-muted); white-space: nowrap; }
+.photo-item-del {
+  background: none; border: none; color: var(--text-muted); font-size: 1rem;
+  cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.photo-item-del:hover { color: var(--red); }
+.photo-item-macros { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.photo-item-macros label {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; color: var(--text-muted);
+}
+.photo-item-macros input {
+  width: 58px; background: var(--bg-input, rgba(255,255,255,0.05));
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
+  color: var(--text); font-size: 0.78rem;
+}
+.photo-confirm-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.photo-confirm-actions select {
+  background: var(--bg-input, rgba(255,255,255,0.05)); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); padding: 8px 10px; font-size: 0.8rem;
+}
+.photo-discard-btn {
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-muted); padding: 8px 12px; font-size: 0.8rem; cursor: pointer;
+}
+.photo-discard-btn:hover { color: var(--red); border-color: var(--red); }
+.photo-confirm-note { margin: 8px 0 0; font-size: 0.72rem; color: var(--text-muted); }

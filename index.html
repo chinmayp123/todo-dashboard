@@ -415,6 +415,25 @@
                 </button>
               </div>
             </div>
+            <!-- Photo food logging -->
+            <div class="photo-log">
+              <div class="photo-log-row">
+                <button type="button" class="photo-snap-btn" id="snapMealBtn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  Snap a meal
+                </button>
+                <button type="button" class="photo-key-btn" id="photoKeyBtn" title="Set or change your Anthropic API key">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                </button>
+              </div>
+              <input type="file" id="photoFileInput" accept="image/*" capture="environment" hidden>
+              <div class="photo-key-setup" id="photoKeySetup" hidden>
+                <input type="password" id="photoKeyInput" placeholder="Paste Anthropic API key (sk-ant-…)" autocomplete="off">
+                <button type="button" class="btn-primary" id="photoKeySaveBtn">Save</button>
+                <p class="photo-key-note">Stored only on this device — never synced. Get a key at console.anthropic.com. Save with the field empty to remove it.</p>
+              </div>
+              <div class="photo-result" id="photoResult"></div>
+            </div>
           </div>
 
           <!-- Daily Summary -->
@@ -725,6 +744,7 @@
   <script src="js/calendar.js"></script>
   <script src="js/gym.js"></script>
   <script src="js/diet.js"></script>
+  <script src="js/food-photo.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
