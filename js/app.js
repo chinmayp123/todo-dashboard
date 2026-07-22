@@ -57,8 +57,8 @@ function bindEvents() {
     });
   });
 
-  // Add task
-  $('#addTaskBtn').addEventListener('click', () => openModal());
+  // Header primary-action button — context-aware (see switchView for labels)
+  $('#addTaskBtn').addEventListener('click', headerPrimaryAction);
   $('#modalClose').addEventListener('click', closeModal);
   $('#cancelBtn').addEventListener('click', closeModal);
   $('#taskModal').addEventListener('click', (e) => {
@@ -166,6 +166,30 @@ function bindEvents() {
 }
 
 // ========== Views ==========
+// The header's top-right button adapts to the current view: it logs weight in
+// the Gym, logs food in Diet, and creates a task everywhere else.
+const HEADER_ACTION_LABELS = { gym: 'Log Weight', diet: 'Log Food' };
+
+function headerPrimaryAction() {
+  if (currentView === 'gym') {
+    const el = $('#weightInput');
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
+  } else if (currentView === 'diet') {
+    const el = $('#dietFoodName');
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
+  } else {
+    openModal();
+  }
+}
+
+function updateHeaderActionBtn(view) {
+  const btn = $('#addTaskBtn');
+  if (!btn) return;
+  if (view === 'settings') { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  btn.textContent = HEADER_ACTION_LABELS[view] || '+ New Task';
+}
+
 function switchView(view) {
   currentView = view;
   localStorage.setItem('tf_view', view);
@@ -175,6 +199,7 @@ function switchView(view) {
   const titles = { dashboard: 'Dashboard', tasks: 'All Tasks', board: 'Board', calendar: 'Calendar', gym: 'Gym', diet: 'Diet', settings: 'Settings' };
   $('#viewTitle').textContent = titles[view];
   $(`#${view}View`).classList.add('active');
+  updateHeaderActionBtn(view);
   render();
 }
 

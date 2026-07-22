@@ -4371,14 +4371,14 @@ button:not(:disabled):active {
 /* ---- Body Weight card ---- */
 .weight-card {
   margin-bottom: 20px;
-  padding: 18px 20px;
+  padding: 12px 18px;
 }
 
 .weight-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 .weight-head h2 {

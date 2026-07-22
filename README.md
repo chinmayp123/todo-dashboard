@@ -2,93 +2,129 @@
 
 *(formerly LifeStack)*
 
-A personal productivity dashboard that aligns your day — tasks, workouts, nutrition, and schedule in one place. Built with vanilla HTML, CSS, and JavaScript — no frameworks, no dependencies.
+A personal life dashboard that aligns your day — tasks, workouts, nutrition, weigh-ins, and schedule in one place, with optional AI logging and Apple Watch sync. Built with **vanilla HTML, CSS, and JavaScript — no framework, no build step, no bundler.**
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
+
+Installable as a PWA, syncs across devices via Firebase, and works offline.
+
+---
+
+## For designers (start here for a design pass)
+
+Everything visual lives in **one file: `style.css`** (~5,000 lines). There is no CSS framework, no Tailwind, no CSS-in-JS — just plain CSS with custom properties.
+
+**The entire theme is driven by CSS variables** defined at `:root` in `style.css`. Change these and the whole app reskins:
+
+| Token | Value | Role |
+|---|---|---|
+| `--bg-primary` / `--bg-secondary` | `#0b0b10` / `#0f0f16` | Page + panel backgrounds (dark) |
+| `--bg-card` / `--bg-hover` | `#14141d` / `#1e1e2a` | Card surface / hover |
+| `--border` | `#232330` | Hairline borders |
+| `--text-primary` / `--secondary` / `--muted` | `#f2f2f7` / `#a5a5bd` / `#73738c` | Text hierarchy |
+| `--accent` / `--accent-hover` / `--accent-glow` | `#6d6af8` (indigo) | Primary brand color, buttons, active states |
+| `--green` / `--yellow` / `--red` / `--blue` / `--purple` | status colors | Progress dots, deltas, alerts |
+| `--radius` / `--radius-sm` | `16px` / `10px` | Corner rounding |
+| `--font-display` / `--font-body` | Space Grotesk / Inter | Headings vs body |
+| `--shadow`, `--sidebar-width` | — | Elevation + layout |
+
+**Structure:** `index.html` holds all markup. Each screen is a `<div class="view" id="...View">` (dashboard, tasks, board, calendar, gym, diet, settings) toggled by `switchView()` in `js/app.js`. Content is grouped into `.card` blocks. The layout is a fixed left `.sidebar` + main content on desktop, collapsing to a top bar + bottom `.bottom-nav` on mobile (`@media (max-width: 900px)`).
+
+**It's fully responsive and theme-token-driven, so most redesigns are CSS-only** — recolor by editing the `:root` tokens, restyle components by editing their classes, no JS required. To preview changes, see *Running locally* below and open the app in a browser (or resize to phone width / use device-emulation).
+
+**Current aesthetic:** dark, indigo-accented, rounded cards, Space Grotesk display type, generous spacing, subtle glows and micro-animations.
+
+---
 
 ## Features
 
 ### Dashboard
-- At-a-glance stats: total tasks, in progress, completed, overdue
-- Project filter to scope the entire dashboard to a specific project
-- Smart reminders: gym streaks, water intake, calorie goals, morning routine, brush teeth
-- Daily schedule with drag-and-drop time slot assignment
-- Upcoming deadlines with project color coding
+- Task stats (total, in progress, completed, overdue) with project filtering
+- **Health strip** — today's calories, net calories (food minus training + walking burn), protein, water, steps, exercise minutes, sleep, and weight, each vs. goal
+- **Weekly Report** — trailing-7-day averages for calories, protein, carbs, fat, training, water, resting HR, and sleep, plus a single prioritized focus for the week
+- Weight-trend chart (7-day smoothed) vs. goal line
+- Smart reminders (gym gaps, water, calories, protein, weigh-ins, habits) and a drag-and-drop daily schedule
 
-### Task Management
-- **Board View** — Kanban-style columns (To Do, In Progress, Done) with drag-and-drop
-- **List View** — Filterable and sortable task table
-- Tasks grouped into collapsible category folders in all columns
-- Subtask checklists within each task
-- Auto-archive: tasks completed 2+ weeks ago move to an archived section
-- Creation date and completion date tracking
-
-### Projects
-- Create projects with custom colors
-- Filter tasks, board, and dashboard by project
-- Project labels displayed on task cards
-- Sidebar project list with active task counts
+### Tasks
+- **Board** (Kanban, drag-and-drop, category folders) and **List** views
+- Subtask checklists, priorities, due dates, projects with custom colors
+- Auto-archive of tasks completed 2+ weeks ago
 
 ### Calendar
-- Month and week views with US holiday markers
-- Custom events: double-click any day to add an event with a color picker
-- Click events to edit or delete
-- Task dots shown on their due dates
+- Month/week views with US holidays, custom color-coded events, and task dots on due dates
 
-### Gym Tracking
-- Log exercises with sets, reps, and weight
-- Bodyweight exercise detection: push ups, sit ups, pull ups, etc. automatically hide the weight field
-- Day-by-day navigation to browse workout history
-- Daily stats: exercises, sets, total reps, volume
+### Gym
+- Log exercises with sets/reps/weight; automatic bodyweight-exercise detection
+- **Trend body weight** (7-day rolling average) as the headline, with pace-to-goal tracking and ETA
+- **Targets & Coach** — MET-based (or Apple-Watch-measured) calorie burn vs. goal, and rule-based training recommendations
+- **Progressive overload** — beat-last-time chip, PR badges, and calisthenics progression ladders
+- **Consistency** — day streak, weekly count, and a 16-week GitHub-style heatmap
+- Built-in rest timer
 
-### Diet & Nutrition
-- **200+ food database** — proteins, grains, vegetables, fruits, snacks, fast food (McDonald's, Chick-fil-A, Taco Bell, Chipotle, and more), South Indian foods, branded cereals
-- Live search with debounced dropdown and API fallback (Open Food Facts + USDA)
-- Save custom foods with your own macros
-- Serving size adjustment with real-time macro recalculation (0.5 increments)
-- Daily macro goal tracker: calories, protein, carbs, fat with progress bars
-- Food recommendations based on remaining daily goals
-- Meal grouping: breakfast, lunch, dinner, snack
-- Water intake tracker with quick-add buttons and daily goal
+### Diet
+- 200+ food database (incl. South Indian foods and fast-food chains) with live search (Open Food Facts + USDA fallback), custom foods, serving math, and meal grouping
+- Macro goal tracker (calories, protein, carbs, fat) with net-calorie awareness and protein-aware overage advice
+- Water tracker with quick-add buttons
 
-## Getting Started
+### AI logging *(optional — needs your own Anthropic API key)*
+- **Photo food logging** — snap a plate; Claude vision estimates each item's macros into an editable confirmation card
+- **Voice / natural-language commands** — a floating mic (or typed input) lets you say things like *"log 40 oz water,"* *"add a task to pay rent tomorrow,"* *"I weighed 163,"* or *"three idli for breakfast"*; Claude parses it into actions, each with an Undo
+- See `HEALTH-SYNC.md` and the *AI features* note below for setup
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/chinmayp123/todo-dashboard.git
-   ```
-2. Open `index.html` in your browser.
+### Apple Health / Apple Watch
+- An iPhone Shortcut writes steps, active energy, exercise minutes, resting HR, and sleep into a separate Firebase node the app reads; watch-measured active burn replaces the estimate everywhere. Full setup in **`HEALTH-SYNC.md`**.
 
-That's it. No build step, no install, no server required.
+---
 
-## Data Storage
+## Tech stack
 
-All data is stored in your browser's `localStorage`. Nothing is sent to any server. Your tasks, workouts, meals, and events stay on your device.
+- **Vanilla JavaScript (ES6+)** — no framework, no build tooling
+- **CSS custom properties** for theming (single `style.css`)
+- **Firebase Realtime Database** for cross-device sync (`js/firebase-sync.js`)
+- **PWA** — installable, `sw.js` service worker, offline-capable
+- **Anthropic API** called directly from the browser for the AI features (photo + voice), using a device-local key
+- Deployed on **GitHub Pages** (auto-deploys on push to `main`)
 
-## Project Structure
+## Running locally
+
+No install or build. Either open `index.html` directly, or serve it (recommended, so the service worker and relative paths behave):
+
+```bash
+npx http-server -p 8080 -c-1 .
+# then open http://localhost:8080
+```
+
+To test on a phone, open `http://<your-computer-lan-ip>:8080` on the same Wi-Fi.
+
+## Data & privacy
+
+- App data (tasks, workouts, meals, weigh-ins, water, goals) syncs to **Firebase Realtime Database** and is cached in `localStorage` for offline use.
+- Apple Health/Watch data lives in a **separate `external` Firebase node** the app only reads — app writes can never overwrite it.
+- **AI features** send the photo or spoken text to the Anthropic API. The **API key is stored only in that browser's `localStorage`** (`tf_anthropic_key`) — never committed to the repo or synced to Firebase — so a public repo never exposes a billable key. AI features are entirely optional and dormant until a key is added.
+
+## Project structure
 
 ```
-index.html          — Main HTML
-style.css           — All styles
+index.html            — All markup (one .view per screen)
+style.css             — All styles + :root design tokens
+sw.js                 — Service worker (offline / PWA)
+manifest.webmanifest  — PWA manifest
+HEALTH-SYNC.md        — Apple Health / Watch shortcut setup
 js/
-  state.js          — Data model and localStorage persistence
-  utils.js          — DOM helpers, date formatting, US holidays
-  app.js            — Entry point, navigation, event binding
-  dashboard.js      — Dashboard stats, reminders, schedule
-  tasks.js          — List view with filters and sorting
-  board.js          — Kanban board with drag-and-drop
-  calendar.js       — Month/week calendar and custom events
-  modal.js          — Task create/edit modal
-  gym.js            — Workout logging
-  diet.js           — Food tracking, database, and API lookups
+  state.js            — Data model, localStorage persistence, defaults
+  utils.js            — DOM helpers ($ / $$), dates, holidays, toasts
+  app.js              — Entry point, navigation (switchView), event binding
+  firebase-sync.js    — Firebase sync + external (Apple Health) reads
+  dashboard.js        — Health strip, Weekly Report, weight trend, reminders, schedule
+  tasks.js            — List view
+  board.js            — Kanban board
+  calendar.js         — Month/week calendar + events
+  modal.js            — Task create/edit modal
+  gym.js              — Workout logging, trend weight, coach, streaks, PRs
+  diet.js             — Food tracking, database, API lookups, goals, water
+  food-photo.js       — Photo food logging (Claude vision)
+  voice.js            — Voice / natural-language commands (Web Speech + Claude)
 ```
-
-## Tech Stack
-
-- Vanilla JavaScript (ES6+)
-- CSS custom properties for theming
-- Zero dependencies
-- Runs entirely in the browser
 
 ## License
 
