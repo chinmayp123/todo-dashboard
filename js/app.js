@@ -15,11 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Scroll to top on load
   window.scrollTo(0, 0);
 
-  // Initialize Firebase real-time sync. The initial reconciliation inside
-  // initFirebaseSync decides whether to pull cloud data or push local up — we no
-  // longer blindly push local state after a timeout, which could clobber newer
-  // cloud data before it had a chance to load.
-  initFirebaseSync(applyFirebaseData);
+  // Ask who is using the app before touching the cloud. Until a profile is
+  // picked there is no DATA_REF, so no one can read or overwrite anyone else's
+  // node. Once picked, the initial reconciliation inside initFirebaseSync
+  // decides whether to pull cloud data or push local up — we no longer blindly
+  // push local state after a timeout, which could clobber newer cloud data
+  // before it had a chance to load.
+  updateProfileSettingsCard();
+  requireProfile(() => initFirebaseSync(applyFirebaseData));
 });
 
 function setHeaderDate() {
@@ -148,6 +151,10 @@ function bindEvents() {
   // Add category / project
   $('#addCategoryBtn').addEventListener('click', handleAddCategory);
   $('#addProjectBtn').addEventListener('click', handleAddProject);
+
+  // Profile
+  const switchProfileBtn = $('#switchProfileBtn');
+  if (switchProfileBtn) switchProfileBtn.addEventListener('click', switchProfile);
 
   // Backup / Restore
   $('#exportBtn').addEventListener('click', () => exportBackup());

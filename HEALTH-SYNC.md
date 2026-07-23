@@ -16,6 +16,27 @@ Supported metrics and where they show up:
 
 Steps work from the iPhone alone. The other three need an Apple Watch (that's what measures active energy, exercise minutes, and resting HR). When `activeEnergy` exists for a date, the app trusts it outright and stops adding its own workout estimate + walking burn — the watch number already includes both.
 
+## If you are not Chinmay: use your own paths
+
+Daylign now has one profile per person (see "Who's using this device" in Settings). The paths in the table above belong to the original profile, which was set up before profiles existed. **Everyone else adds `u/<your-profile-id>` after `external`:**
+
+| Your profile | Path to use |
+|---|---|
+| Chinmay | `external/steps/<date>` |
+| Anyone else, e.g. profile id `arjun` | `external/u/arjun/steps/<date>` |
+
+Your profile id is your first name, lowercased, with spaces and punctuation turned into hyphens — "Arjun K" becomes `arjun-k`. Settings shows the name you picked.
+
+So wherever this guide says:
+
+`https://lifestack-d5300-default-rtdb.firebaseio.com/external/steps/[Current Date].json`
+
+you would use:
+
+`https://lifestack-d5300-default-rtdb.firebaseio.com/external/u/arjun/steps/[Current Date].json`
+
+Everything else — the Health sample types, the date format, the Automation — is identical. The app reads only your own subtree, so your metrics never mix with anyone else's.
+
 ## Shortcut setup
 
 Open the **Shortcuts** app on your iPhone and create a new shortcut named **Sync Steps to Daylign**, with these three actions in order:

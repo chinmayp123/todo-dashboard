@@ -5645,3 +5645,117 @@ html[data-theme="light"] .more-sheet-overlay { background: rgba(20, 20, 45, 0.35
 .diet-log-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
 .diet-food-form { display: flex; flex-direction: column; gap: 14px; }
 .diet-macro-inputs { gap: 10px; }
+
+/* ========== Profile Gate ========== */
+/* Shown once per device, before any cloud data is read. Uses the theme tokens
+   so it follows light/dark like everything else. */
+body.profile-gated { overflow: hidden; }
+
+.profile-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-primary);
+}
+.profile-gate[hidden] { display: none; }
+
+.profile-gate-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+  text-align: center;
+}
+
+.profile-gate-mark {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 18px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-gate-card h1 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.profile-gate-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.profile-gate-owner { width: 100%; }
+
+.profile-gate-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 18px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.profile-gate-divider::before,
+.profile-gate-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.profile-gate-label {
+  display: block;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.profile-gate-input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px; /* 16px-ish keeps iOS from zooming the whole page on focus */
+}
+.profile-gate-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.profile-gate-error {
+  font-size: 12px;
+  color: var(--red);
+  text-align: left;
+  margin: -6px 0 12px;
+}
+.profile-gate-error[hidden] { display: none; }
+
+.profile-gate #profileCreateBtn { width: 100%; }

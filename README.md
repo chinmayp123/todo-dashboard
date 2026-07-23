@@ -99,7 +99,9 @@ To test on a phone, open `http://<your-computer-lan-ip>:8080` on the same Wi-Fi.
 ## Data & privacy
 
 - App data (tasks, workouts, meals, weigh-ins, water, goals) syncs to **Firebase Realtime Database** and is cached in `localStorage` for offline use.
-- Apple Health/Watch data lives in a **separate `external` Firebase node** the app only reads — app writes can never overwrite it.
+- **Profiles:** each person's data lives at `users/<profile-id>`, picked once per device on first launch and stored in `localStorage['daylign_profile']`. Nothing is read from or written to the cloud until a profile is chosen. This gives people **separation, not security** — the database has no auth rules, so it stops accidental clobbering between people who trust each other, and is not a permission system. Switch or reset from Settings → *Who's using this device*.
+- The original pre-profiles node `lifestack` is **never written again** and is kept as a frozen backup.
+- Apple Health/Watch data lives in a **separate `external` Firebase node** the app only reads — app writes can never overwrite it. Per person: `external/*` for the original profile, `external/u/<profile-id>/*` for everyone else.
 - **AI features** send the photo or spoken text to the Anthropic API. The **API key is stored only in that browser's `localStorage`** (`tf_anthropic_key`) — never committed to the repo or synced to Firebase — so a public repo never exposes a billable key. AI features are entirely optional and dormant until a key is added.
 
 ## Project structure
@@ -115,6 +117,7 @@ js/
   utils.js            — DOM helpers ($ / $$), dates, holidays, toasts
   app.js              — Entry point, navigation (switchView), event binding
   firebase-sync.js    — Firebase sync + external (Apple Health) reads
+  profile.js          — Per-person profiles: first-launch gate, node paths, switching
   dashboard.js        — Health strip, Weekly Report, weight trend, reminders, schedule
   tasks.js            — List view
   board.js            — Kanban board

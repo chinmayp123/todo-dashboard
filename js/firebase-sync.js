@@ -12,11 +12,17 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const DATA_REF = db.ref('lifestack');
+
+// Whose data this session reads and writes. Assigned in initFirebaseSync once
+// a profile has been chosen (see js/profile.js) — it is deliberately not set at
+// load time, so there is no ref to write through before we know who is using
+// the app. The original single-user node 'lifestack' is never written again;
+// it stays frozen as a pre-profiles backup.
+let DATA_REF = null;
 
 // External data (written by iPhone Shortcuts / Apple Health exports) lives at
-// a SEPARATE root node so the app's full-state writes to 'lifestack' can never
-// clobber it. The app only ever reads it. See HEALTH-SYNC.md for the setup.
+// a SEPARATE root node so the app's full-state writes can never clobber it.
+// The app only ever reads it. See HEALTH-SYNC.md for the setup.
 let externalData = null;
 
 function getExternalMetric(node, dateStr) {
@@ -41,7 +47,9 @@ function getExternalSleep(dateStr) {
 
 function loadExternalData() {
   try {
-    db.ref('external').once('value')
+    // Reads only this profile's subtree, so the shape handed to
+    // getExternalMetric is identical no matter whose it is.
+    db.ref(profileExternalPath()).once('value')
       .then(snap => {
         const v = snap.val();
         if (!v) return;
@@ -94,6 +102,7 @@ function setSyncStatus(state, message) {
 function saveToFirebase(data) {
   if (suppressFirebaseWrite) return;
   if (!firebaseReady) return;
+  if (!DATA_REF) return; // no profile chosen yet — nothing may reach the cloud
   setSyncStatus('saving');
   DATA_REF.set({
     tasks: data.tasks || [],
@@ -116,10 +125,43 @@ function saveToFirebase(data) {
     });
 }
 
-// Load from Firebase once on startup, then listen for changes
+// One-time move of the original single-user node into users/chinmay.
+// Strictly additive: it writes only when users/chinmay does not exist yet, so
+// running it again — on another device, or after a reload — can never overwrite
+// newer data. 'lifestack' itself is left in place as a frozen backup of
+// everything from before profiles existed.
+function migrateOwnerData() {
+  return db.ref('users/' + OWNER_PROFILE.id).once('value')
+    .then(snap => {
+      if (snap.exists()) return false;
+      return db.ref('lifestack').once('value').then(legacySnap => {
+        const legacy = legacySnap.val();
+        if (!legacy) return false;
+        return db.ref('users/' + OWNER_PROFILE.id).set(legacy).then(() => {
+          console.log('Migrated pre-profiles data from lifestack to users/' + OWNER_PROFILE.id);
+          return true;
+        });
+      });
+    });
+}
+
+// Load from Firebase once on startup, then listen for changes.
+// Must run only after a profile is chosen — see requireProfile in js/profile.js.
 function initFirebaseSync(onDataReceived) {
   setSyncStatus('connecting');
+  DATA_REF = db.ref(profileDataPath());
   loadExternalData();
+
+  // The owner's data has to be in place before the first read, or an empty
+  // node would look like "no cloud data" and get overwritten by local state.
+  const migrated = (currentProfile() && currentProfile().legacy)
+    ? migrateOwnerData().catch(err => { console.warn('Migration check failed:', err); return false; })
+    : Promise.resolve(false);
+
+  migrated.then(() => startFirebaseSync(onDataReceived));
+}
+
+function startFirebaseSync(onDataReceived) {
   // First load
   DATA_REF.once('value')
     .then(snapshot => {
