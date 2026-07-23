@@ -209,6 +209,67 @@ function headerPrimaryAction() {
   }
 }
 
+// Pre-built iCloud shortcuts, one per Apple Health metric. Add more here as
+// they're published — each renders its own "Add" button in Settings.
+const HEALTH_SHORTCUTS = [
+  { label: 'Steps', url: 'https://www.icloud.com/shortcuts/b4c12d9d299a4a849b2d10e978cfa8e1' },
+  { label: 'Sleep', url: 'https://www.icloud.com/shortcuts/896af7c980d44e24b0188225a98c7ab0' },
+];
+
+// Metric names the app understands, so the "last synced" scan ignores the
+// nested u/<id> subtree under the legacy external node.
+const KNOWN_EXTERNAL_METRICS = ['steps', 'activeEnergy', 'exerciseMinutes', 'restingHR', 'sleep', 'runDistance', 'cycleDistance', 'swimDistance'];
+
+function lastExternalSyncDate() {
+  if (typeof externalData === 'undefined' || !externalData) return null;
+  let latest = null;
+  KNOWN_EXTERNAL_METRICS.forEach(m => {
+    const o = externalData[m];
+    if (o && typeof o === 'object') Object.keys(o).forEach(d => { if (!latest || d > latest) latest = d; });
+  });
+  return latest;
+}
+
+function renderWatchConnect() {
+  const wrap = $('#watchConnect');
+  if (!wrap) return;
+  const dbUrl = (typeof firebaseConfig !== 'undefined' && firebaseConfig.databaseURL) ? firebaseConfig.databaseURL.replace(/\/$/, '') : '';
+  const path = (typeof profileExternalPath === 'function') ? profileExternalPath() : 'external';
+  const base = dbUrl + '/' + path;
+  const id = (typeof currentProfile === 'function' && currentProfile()) ? currentProfile().id : '';
+  const last = lastExternalSyncDate();
+  const status = last
+    ? `<div class="watch-status ok"><span class="watch-dot"></span>Connected — last synced ${esc(last)}</div>`
+    : `<div class="watch-status"><span class="watch-dot"></span>Not synced yet — add a shortcut below</div>`;
+
+  wrap.innerHTML = `
+    ${status}
+    <ol class="watch-steps">
+      <li>
+        <strong>Add the shortcuts</strong> to your iPhone (tap, then “Add Shortcut”):
+        <div class="watch-shortcut-btns">
+          ${HEALTH_SHORTCUTS.map(s => `<a class="btn-secondary watch-shortcut" href="${s.url}" target="_blank" rel="noopener">＋ ${esc(s.label)}</a>`).join('')}
+        </div>
+      </li>
+      <li>
+        <strong>If a shortcut asks for your Daylign ID,</strong> paste this:
+        <div class="watch-copy"><code id="watchId">${esc(id || '—')}</code><button class="btn-secondary" data-copy="#watchId">Copy</button></div>
+      </li>
+      <li><strong>Run each one once</strong> to grant Health access. Then in the Shortcuts app add an <em>Automation → Time of Day → nightly</em> that runs them, so it syncs on its own.</li>
+    </ol>
+    <details class="watch-adv">
+      <summary>Advanced: your full sync URL</summary>
+      <div class="watch-copy"><code id="watchUrl">${esc(base)}</code><button class="btn-secondary" data-copy="#watchUrl">Copy</button></div>
+      <p class="settings-desc">Shortcuts post each metric to <code>&lt;this&gt;/&lt;metric&gt;/&lt;date&gt;.json</code>. Full walkthrough in <code>HEALTH-SYNC.md</code>.</p>
+    </details>`;
+
+  wrap.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+    const el = wrap.querySelector(b.dataset.copy);
+    const txt = el ? el.textContent : '';
+    if (navigator.clipboard && txt) navigator.clipboard.writeText(txt).then(() => showToast('Copied')).catch(() => {});
+  }));
+}
+
 function renderGoalsSummary() {
   const wrap = $('#goalsSummary');
   if (!wrap || typeof getGoals !== 'function') return;
@@ -316,6 +377,7 @@ function render() {
   applyModuleNav();
   if (typeof updateProfileSettingsCard === 'function') updateProfileSettingsCard();
   if (typeof renderGoalsSummary === 'function') renderGoalsSummary();
+  if (typeof renderWatchConnect === 'function') renderWatchConnect();
   if (typeof renderTaxonomyManager === 'function') {
     renderTaxonomyManager();
     // Keep the popup in sync while it's open (add/delete/rename call render()).

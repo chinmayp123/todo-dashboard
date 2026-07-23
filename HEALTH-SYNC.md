@@ -1,5 +1,15 @@
 # Syncing Apple Health (Steps + Apple Watch) into Daylign
 
+## Fastest setup: add the pre-built shortcuts
+
+In the app, go to **Settings → Connect Apple Watch**. Tap each shortcut to add it to your iPhone, run it once to grant Health access, then set up a nightly Automation to run them. That's the whole thing — the manual build below is only if you want to understand or customize it.
+
+Pre-built shortcuts:
+- **Steps** — https://www.icloud.com/shortcuts/b4c12d9d299a4a849b2d10e978cfa8e1
+- **Sleep** — https://www.icloud.com/shortcuts/896af7c980d44e24b0188225a98c7ab0
+
+---
+
 ## What this does
 
 An iPhone Shortcut reads today's health data from Apple Health and writes it directly to the Daylign Firebase Realtime Database under the `external` node (e.g. `external/steps/2026-07-16 = 8421`). The dashboard reads this node read-only. The app's own writes go to the `lifestack` node, so nothing under `external` is ever overwritten by the app.

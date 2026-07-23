@@ -6351,3 +6351,88 @@ body.onboard-open { overflow: hidden; }
   transition: color .15s, background .15s;
 }
 .sidebar-manage-btn:hover { color: var(--accent); background: var(--accent-glow); }
+
+/* ========== Connect Apple Watch (Settings) ========== */
+.watch-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0 16px;
+}
+.watch-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+.watch-status.ok { color: var(--green); }
+.watch-status.ok .watch-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+.watch-steps {
+  list-style: none;
+  counter-reset: watch;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.watch-steps li {
+  counter-increment: watch;
+  position: relative;
+  padding-left: 34px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.watch-steps li::before {
+  content: counter(watch);
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.watch-steps strong { color: var(--text-primary); font-weight: 600; }
+
+.watch-shortcut-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.watch-shortcut { text-decoration: none; }
+
+.watch-copy {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 8px;
+}
+.watch-copy code {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  overflow-x: auto;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+.watch-copy .btn-secondary { flex-shrink: 0; }
+
+.watch-adv { margin-top: 16px; }
+.watch-adv summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+.watch-adv summary:hover { color: var(--text-secondary); }
+.watch-adv .settings-desc { margin-top: 8px; }
+.watch-adv code { background: var(--bg-input); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
