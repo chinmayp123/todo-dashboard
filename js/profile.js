@@ -88,7 +88,13 @@ function showProfileGate(onReady) {
   const err = document.getElementById('profileGateError');
   const nameInput = document.getElementById('profileNewName');
 
-  function choose(profile) {
+  // isNew: created via the "start fresh" path, so this device's state is still
+  // the demo seed from loadData(). Wipe it to a clean slate BEFORE sync starts,
+  // or the empty cloud node gets the sample tasks pushed into it. The owner and
+  // any returning profile skip this — the owner migrates, a returning profile
+  // pulls their real cloud data.
+  function choose(profile, isNew) {
+    if (isNew && typeof resetLocalStateToStarter === 'function') resetLocalStateToStarter();
     saveProfile(profile);
     gate.hidden = true;
     document.body.classList.remove('profile-gated');
@@ -114,7 +120,7 @@ function showProfileGate(onReady) {
       if (err) { err.textContent = 'That name is taken — use the button above instead.'; err.hidden = false; }
       return;
     }
-    choose({ id: id, name: name, legacy: false });
+    choose({ id: id, name: name, legacy: false }, true);
   }
   if (createBtn) createBtn.addEventListener('click', createFromInput);
   if (nameInput) {
@@ -227,6 +233,24 @@ function renderUsageReport(all, names, out) {
         </div>
       </div>`;
   }).join('');
+}
+
+// Wipe the CURRENTLY ACTIVE profile back to a clean slate — local and cloud.
+// For repairing a profile that got seeded with the demo tasks (created before
+// the clean-start fix), or for anyone who just wants to start over. Only ever
+// touches the active profile's own node, and only on a typed confirmation.
+function resetCurrentProfileData() {
+  const who = activeProfile ? activeProfile.name : 'this profile';
+  const typed = prompt(
+    `Erase ALL of ${who}'s data — tasks, workouts, cardio, meals, weigh-ins — ` +
+    `on every device, and start from an empty app?\n\n` +
+    `This does not touch anyone else's profile. It cannot be undone.\n\n` +
+    `Type ERASE to confirm.`
+  );
+  if (typed !== 'ERASE') { showToast('Cancelled — nothing was erased'); return; }
+  resetLocalStateToStarter();
+  saveData(state); // pushes the clean slate to this profile's cloud node
+  showToast(`${who} reset to a clean slate`);
 }
 
 // Switching wipes this device's cached tf_* data first. Without that, the

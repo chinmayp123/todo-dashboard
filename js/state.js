@@ -117,6 +117,41 @@ function applyFirebaseData(data) {
   }
 }
 
+// A clean slate for a brand-new person. The sample tasks and demo projects in
+// loadData() exist so a first-ever install looks alive — but a new PROFILE is
+// not a new install, and seeding it means their first sync pushes demo junk
+// into their cloud node. New profiles get this instead: no tasks, no demo
+// projects, everything empty. The default categories stay because task
+// creation needs at least one category to file under.
+function starterState() {
+  return {
+    tasks: [],
+    categories: [...DEFAULT_CATEGORIES],
+    projects: [],
+    gym: [],
+    cardio: [],
+    diet: [],
+    customFoods: {},
+    water: {},
+    events: [],
+    removedFoods: [],
+    weight: {},
+    goals: {},
+  };
+}
+
+// Reset THIS device's cached data and the in-memory state to a clean slate.
+// Used when creating a fresh profile (so its first push is clean) and by the
+// Settings "start fresh" repair. Keeps the device-local API key and view.
+function resetLocalStateToStarter() {
+  Object.keys(localStorage)
+    .filter(k => k.indexOf('tf_') === 0 && k !== 'tf_anthropic_key' && k !== 'tf_view')
+    .forEach(k => localStorage.removeItem(k));
+  const fresh = starterState();
+  Object.keys(fresh).forEach(k => { state[k] = fresh[k]; });
+  if (typeof render === 'function') { try { render(); } catch (e) {} }
+}
+
 // ========== State ==========
 let state = loadData();
 let currentView = localStorage.getItem('tf_view') || 'dashboard';
