@@ -314,6 +314,7 @@ function applyModuleNav() {
 // ========== Render ==========
 function render() {
   applyModuleNav();
+  if (typeof updateProfileSettingsCard === 'function') updateProfileSettingsCard();
   if (typeof renderGoalsSummary === 'function') renderGoalsSummary();
   if (typeof renderTaxonomyManager === 'function') {
     renderTaxonomyManager();

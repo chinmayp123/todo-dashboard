@@ -69,6 +69,12 @@ function requireProfile(onReady) {
   const saved = loadProfile();
   if (saved) {
     activeProfile = saved;
+    // Returning session (we remembered this profile and skip the gate). The
+    // gate's choose() would normally refresh these, but here we bypass it, so
+    // update the sidebar indicator and re-render for the greeting — otherwise
+    // the app opens showing the default "?" avatar with no name.
+    updateProfileSettingsCard();
+    if (typeof render === 'function') render();
     onReady(saved);
     return;
   }
