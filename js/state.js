@@ -46,6 +46,9 @@ function loadData() {
     projects: safeParse('tf_projects', [...DEFAULT_PROJECTS]),
     gym: safeParse('tf_gym', []),
     cardio: safeParse('tf_cardio', []),
+    // Which optional modules this profile shows. Missing key = on, so existing
+    // profiles and fresh installs get everything until they turn something off.
+    modules: safeParse('tf_modules', {}),
     diet: safeParse('tf_diet', []),
     customFoods: safeParse('tf_custom_foods', {}),
     water: safeParse('tf_water', {}),
@@ -61,6 +64,7 @@ function saveData(data) {
   localStorage.setItem('tf_categories', JSON.stringify(data.categories));
   localStorage.setItem('tf_gym', JSON.stringify(data.gym));
   localStorage.setItem('tf_cardio', JSON.stringify(data.cardio || []));
+  localStorage.setItem('tf_modules', JSON.stringify(data.modules || {}));
   localStorage.setItem('tf_diet', JSON.stringify(data.diet));
   localStorage.setItem('tf_custom_foods', JSON.stringify(data.customFoods));
   localStorage.setItem('tf_water', JSON.stringify(data.water));
@@ -87,6 +91,7 @@ function applyFirebaseData(data) {
   state.projects = data.projects || [];
   state.gym = data.gym || [];
   state.cardio = data.cardio || [];
+  state.modules = data.modules || {};
   state.diet = data.diet || [];
   state.customFoods = data.customFoods || {};
   state.water = data.water || {};
@@ -99,6 +104,7 @@ function applyFirebaseData(data) {
   localStorage.setItem('tf_categories', JSON.stringify(state.categories));
   localStorage.setItem('tf_gym', JSON.stringify(state.gym));
   localStorage.setItem('tf_cardio', JSON.stringify(state.cardio));
+  localStorage.setItem('tf_modules', JSON.stringify(state.modules || {}));
   localStorage.setItem('tf_diet', JSON.stringify(state.diet));
   localStorage.setItem('tf_custom_foods', JSON.stringify(state.customFoods));
   localStorage.setItem('tf_water', JSON.stringify(state.water));
@@ -117,6 +123,19 @@ function applyFirebaseData(data) {
   }
 }
 
+// Optional modules the user can turn on/off in Settings. Tasks, Board,
+// Calendar and Dashboard are core and always present.
+const TOGGLEABLE_MODULES = [
+  { key: 'gym',    label: 'Gym',    desc: 'Strength workouts, body weight, PRs' },
+  { key: 'cardio', label: 'Cardio', desc: 'Running, cycling, swimming, race training' },
+  { key: 'diet',   label: 'Diet',   desc: 'Food logging, macros, water' },
+];
+
+// Missing/true = enabled. Only an explicit false hides a module.
+function moduleEnabled(key) {
+  return !state.modules || state.modules[key] !== false;
+}
+
 // A clean slate for a brand-new person. The sample tasks and demo projects in
 // loadData() exist so a first-ever install looks alive — but a new PROFILE is
 // not a new install, and seeding it means their first sync pushes demo junk
@@ -130,6 +149,7 @@ function starterState() {
     projects: [],
     gym: [],
     cardio: [],
+    modules: {},
     diet: [],
     customFoods: {},
     water: {},

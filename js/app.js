@@ -156,6 +156,7 @@ function bindEvents() {
   // Profile
   const switchProfileBtn = $('#switchProfileBtn');
   if (switchProfileBtn) switchProfileBtn.addEventListener('click', switchProfile);
+  renderModuleToggles();
   const usageBtn = $('#usageLoadBtn');
   if (usageBtn) usageBtn.addEventListener('click', loadUsageReport);
   const resetProfileBtn = $('#resetProfileBtn');
@@ -197,6 +198,31 @@ function headerPrimaryAction() {
   }
 }
 
+function renderModuleToggles() {
+  const wrap = $('#moduleToggles');
+  if (!wrap || typeof TOGGLEABLE_MODULES === 'undefined') return;
+  wrap.innerHTML = TOGGLEABLE_MODULES.map(m => `
+    <label class="module-toggle">
+      <span class="module-toggle-text">
+        <span class="module-toggle-label">${m.label}</span>
+        <span class="module-toggle-desc">${m.desc}</span>
+      </span>
+      <input type="checkbox" class="module-toggle-input" data-module="${m.key}" ${moduleEnabled(m.key) ? 'checked' : ''}>
+      <span class="module-toggle-switch" aria-hidden="true"></span>
+    </label>`).join('');
+
+  wrap.querySelectorAll('.module-toggle-input').forEach(input => {
+    input.addEventListener('change', () => {
+      state.modules = state.modules || {};
+      state.modules[input.dataset.module] = input.checked;
+      saveData(state);
+      applyModuleNav();
+      // If we just turned off the module we're standing in, step back to Dashboard.
+      if (!input.checked && currentView === input.dataset.module) switchView('dashboard');
+    });
+  });
+}
+
 function updateHeaderActionBtn(view) {
   const btn = $('#addTaskBtn');
   if (!btn) return;
@@ -205,7 +231,16 @@ function updateHeaderActionBtn(view) {
   btn.textContent = HEADER_ACTION_LABELS[view] || '+ New Task';
 }
 
+// Views that use the category/project sidebar sections. Everything else (the
+// fitness modules, settings) hides them — they only clutter those screens.
+const TASKMETA_VIEWS = ['dashboard', 'tasks', 'board', 'calendar'];
+
 function switchView(view) {
+  // Guard against landing on a module the user has turned off (e.g. a saved
+  // last-view, or a stale command-palette entry).
+  if (typeof moduleEnabled === 'function' && ['gym', 'cardio', 'diet'].indexOf(view) !== -1 && !moduleEnabled(view)) {
+    view = 'dashboard';
+  }
   currentView = view;
   localStorage.setItem('tf_view', view);
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
@@ -215,11 +250,35 @@ function switchView(view) {
   $('#viewTitle').textContent = titles[view];
   $(`#${view}View`).classList.add('active');
   updateHeaderActionBtn(view);
+
+  // Categories/Projects belong to task views only.
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) sidebar.classList.toggle('hide-taskmeta', TASKMETA_VIEWS.indexOf(view) === -1);
+
   render();
+}
+
+// Reflect the module on/off settings across every nav surface and the
+// dashboard cards that belong to a module. Non-destructive: disabling only
+// hides; the data stays in the cloud and returns when re-enabled.
+function applyModuleNav() {
+  if (typeof moduleEnabled !== 'function') return;
+  ['gym', 'cardio', 'diet'].forEach(key => {
+    const on = moduleEnabled(key);
+    document.querySelectorAll(`[data-view="${key}"]`).forEach(el => { el.hidden = !on; });
+  });
+  // Weight trend lives in the Gym module — drop its dashboard card when Gym is off.
+  const weightCard = document.querySelector('.weight-trend-card');
+  if (weightCard) weightCard.hidden = !moduleEnabled('gym');
+  // Hide the sidebar divider that fences off the fitness group when it is empty.
+  const anyFitness = ['gym', 'cardio', 'diet'].some(moduleEnabled);
+  const dividers = document.querySelectorAll('.sidebar .nav-divider');
+  if (dividers[0]) dividers[0].hidden = !anyFitness;
 }
 
 // ========== Render ==========
 function render() {
+  applyModuleNav();
   renderSidebarCategories();
   renderSidebarProjects();
   renderDashboard();

@@ -118,6 +118,7 @@ function saveToFirebase(data) {
     projects: data.projects || [],
     gym: data.gym || [],
     cardio: data.cardio || [],
+    modules: data.modules || {},
     diet: data.diet || [],
     customFoods: data.customFoods || {},
     water: data.water || {},
