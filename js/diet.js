@@ -617,7 +617,7 @@ function renderDiet() {
     recentSeen[meal].add(lower);
     // Per-serving macros from the bank when available, else derived from the entry
     const bankedEntry = Object.entries(state.customFoods).find(([k]) => k.toLowerCase() === lower);
-    const banked = (bankedEntry && bankedEntry[1]) || FOOD_DATABASE[lower];
+    const banked = (bankedEntry && bankedEntry[1]) || FOOD_DATABASE[lower] || (typeof sharedFoods !== 'undefined' && sharedFoods[lower]);
     const n = Number(e.servings) > 0 ? Number(e.servings) : 1;
     const per = banked || {
       calories: Math.round((e.calories || 0) / n),
@@ -722,7 +722,7 @@ function renderDiet() {
         if (!name) return;
         const lower = name.toLowerCase();
         const entry = Object.entries(state.customFoods).find(([k]) => k.toLowerCase() === lower);
-        const data = (entry && entry[1]) || FOOD_DATABASE[lower];
+        const data = (entry && entry[1]) || FOOD_DATABASE[lower] || (typeof sharedFoods !== 'undefined' && sharedFoods[lower]);
         if (!data) return;
         selectFoodFromDropdown(entry ? entry[0] : name, data);
         $('#dietFoodName').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -804,8 +804,26 @@ function searchFoodDatabase(query) {
     }
   }
 
+  // Shared community bank (foods other people saved), skipping anything already
+  // in your own bank so it isn't listed twice.
+  const own = new Set(Object.keys(state.customFoods).map(k => k.toLowerCase()));
+  if (typeof sharedFoods !== 'undefined' && sharedFoods) {
+    for (const [lower, data] of Object.entries(sharedFoods)) {
+      if (own.has(lower)) continue;
+      const name = data.name || lower;
+      if (lower.startsWith(query)) results.push({ name, data, score: -0.5, shared: true });
+      else if (lower.includes(query)) results.push({ name, data, score: 0.5, shared: true });
+      else {
+        const words = query.split(/\s+/);
+        if (words.every(w => lower.includes(w))) results.push({ name, data, score: 1.5, shared: true });
+      }
+    }
+  }
+
   // Then built-in database
+  const already = new Set(results.map(r => r.name.toLowerCase()));
   for (const [name, data] of Object.entries(FOOD_DATABASE)) {
+    if (already.has(name.toLowerCase())) continue;
     if (name.startsWith(query)) {
       results.push({ name, data, score: 0 });
     } else if (name.includes(query)) {
@@ -888,6 +906,7 @@ function rememberFood(name, totals, servings) {
     fiber: 0,
     sugar: 0,
   };
+  if (typeof publishFoodToBank === 'function') publishFoodToBank(key, state.customFoods[key]);
   return true;
 }
 
@@ -914,6 +933,7 @@ function backfillRememberedFoods() {
       fiber: 0,
       sugar: 0,
     };
+    if (typeof publishFoodToBank === 'function') publishFoodToBank(key, state.customFoods[key]);
     seen.add(lower);
     added++;
   }
@@ -1096,7 +1116,7 @@ function bindDietEvents() {
     if (localResults.length) {
       dropdown.innerHTML = localResults.map(r => `
         <div class="diet-search-item" data-food-key="${r.name}" data-food-custom="${r.custom ? '1' : ''}">
-          <div class="diet-search-item-name">${esc(r.name.charAt(0).toUpperCase() + r.name.slice(1))}${r.custom ? ' <span class="diet-custom-badge">My Food</span>' : ''}</div>
+          <div class="diet-search-item-name">${esc(r.name.charAt(0).toUpperCase() + r.name.slice(1))}${r.custom ? ' <span class="diet-custom-badge">My Food</span>' : r.shared ? ' <span class="diet-custom-badge diet-shared-badge">Community</span>' : ''}</div>
           <div class="diet-search-item-macros">
             <span>${r.data.calories} cal</span>
             <span>${r.data.protein}g P</span>
@@ -1131,7 +1151,7 @@ function bindDietEvents() {
       el.addEventListener('mousedown', (e) => {
         e.preventDefault();
         const key = el.dataset.foodKey;
-        const data = state.customFoods[key] || FOOD_DATABASE[key.toLowerCase()];
+        const data = state.customFoods[key] || FOOD_DATABASE[key.toLowerCase()] || (typeof sharedFoods !== 'undefined' && sharedFoods[key.toLowerCase()]);
         if (data) selectFoodFromDropdown(key, data);
       });
     });
@@ -1234,6 +1254,7 @@ function bindDietEvents() {
       fiber: 0,
       sugar: 0,
     };
+    if (typeof publishFoodToBank === 'function') publishFoodToBank(food, state.customFoods[food]);
     saveData(state);
     renderDiet();
     showToast(existed ? `✓ ${food} updated in My Foods` : `✓ ${food} saved to My Foods`);

@@ -53,6 +53,66 @@ function getExternalSleep(dateStr) {
   return Math.round(hours * 10) / 10;
 }
 
+// ---- Shared community food bank ----
+// A SEPARATE root node, like `external`: every profile reads it and every
+// profile's saved foods publish to it, so one person's custom dishes become
+// searchable for everyone. Keyed by a sanitized food name; the display name and
+// macros live in the value. Never written through saveToFirebase (that only
+// touches the per-profile node) — publishing is a targeted, additive write.
+let sharedFoods = {}; // { lowercaseName: { name, calories, protein, carbs, fat, fiber } }
+
+// Firebase keys can't contain . $ # [ ] / — slug around them, keep it short.
+function foodBankKey(name) {
+  return String(name).toLowerCase().trim()
+    .replace(/[.$#\[\]\/]/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 120);
+}
+
+function normalizeFoodValue(e) {
+  return {
+    name: String(e.name).trim(),
+    calories: Number(e.calories) || 0,
+    protein: Number(e.protein) || 0,
+    carbs: Number(e.carbs) || 0,
+    fat: Number(e.fat) || 0,
+    fiber: Number(e.fiber) || 0,
+  };
+}
+
+function loadSharedFoods() {
+  try {
+    db.ref('foodBank').once('value')
+      .then(snap => {
+        const v = snap.val();
+        if (!v) return;
+        const map = {};
+        Object.keys(v).forEach(k => {
+          const e = v[k];
+          if (e && e.name && Number(e.calories) >= 0) map[String(e.name).toLowerCase()] = normalizeFoodValue(e);
+        });
+        sharedFoods = map;
+        if (typeof render === 'function') render();
+      })
+      .catch(() => {}); // community foods are a bonus — never break the app
+  } catch (e) { /* firebase unavailable — fine */ }
+}
+
+// Add/refresh a food in the shared bank. Fire-and-forget and additive: it never
+// removes anything, so one person deleting their copy leaves everyone else's.
+function publishFoodToBank(name, data) {
+  if (!name || !data) return;
+  const key = foodBankKey(name);
+  if (!key) return;
+  const value = normalizeFoodValue({ name: name, calories: data.calories, protein: data.protein, carbs: data.carbs, fat: data.fat, fiber: data.fiber });
+  try {
+    db.ref('foodBank/' + key).set(value).catch(() => {});
+    sharedFoods[String(name).toLowerCase()] = value; // reflect locally at once
+  } catch (e) { /* offline — it'll re-publish next time it's saved */ }
+}
+
 function loadExternalData() {
   try {
     // Reads only this profile's subtree, so the shape handed to
@@ -161,6 +221,7 @@ function initFirebaseSync(onDataReceived) {
   setSyncStatus('connecting');
   DATA_REF = db.ref(profileDataPath());
   loadExternalData();
+  loadSharedFoods();
 
   // The owner's data has to be in place before the first read, or an empty
   // node would look like "no cloud data" and get overwritten by local state.

@@ -6436,3 +6436,5 @@ body.onboard-open { overflow: hidden; }
 .watch-adv summary:hover { color: var(--text-secondary); }
 .watch-adv .settings-desc { margin-top: 8px; }
 .watch-adv code { background: var(--bg-input); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+
+.diet-shared-badge { background: var(--blue-bg); color: var(--blue); }
