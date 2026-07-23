@@ -81,6 +81,7 @@ Shared building blocks worth reusing rather than reinventing: `.card`, `.btn-pri
 - **Race countdown and projected finish** for 5K / 10K / half / marathon, using Riegel's formula against your best recent effort
 - **Coach** — the 10%-a-week volume rule, long-run share of weekly mileage, and taper timing as the race approaches
 - Session calories use pace-scaled MET values and feed the same Net Cals figure as lifting
+- **Apple Watch workout import** — workouts synced from Apple Health show under "⌚ Apple Watch workouts" with one-tap import to the Cardio log (run/ride/swim); a type+distance match hides the button once imported so a hand-logged run and its watch copy don't double up
 
 ### Diet
 - 200+ food database (incl. South Indian foods and fast-food chains) with live search (Open Food Facts + USDA fallback), custom foods, serving math, and meal grouping

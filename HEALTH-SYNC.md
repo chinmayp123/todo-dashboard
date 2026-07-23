@@ -49,6 +49,31 @@ Firebase treats each slash-key (`steps/2026-07-23`) as a deep path, so that one 
 
 ---
 
+## Syncing individual workouts (Apple Watch → Cardio)
+
+Beyond the daily totals above, you can push each **workout session** so they appear in the Cardio tab under "⌚ Apple Watch workouts", each with a one-tap **Add to log** (import) that creates a Cardio session. Runs, rides and swims are importable; strength workouts show as read-only.
+
+Post them to `workouts/<date>` as a list of `{ type, minutes, distance, cal }`:
+- `type` — the Apple workout name (e.g. "Outdoor Run", "Pool Swimming"). The app maps run/cycle/swim automatically.
+- `minutes` — duration
+- `distance` — miles for run/ride, yards for swim (0 for strength)
+- `cal` — active calories
+
+**Shortcut actions:**
+
+1. **Find Workouts** — filter "Start Date is in the last 1 day". (Optionally sort/limit.)
+2. **Repeat with Each** (over the workouts):
+   - **Dictionary**: `type` → Workout *Type*, `minutes` → Workout *Duration* (in minutes), `distance` → Workout *Distance*, `cal` → Workout *Active Energy*.
+   - **Add to Variable** `WorkoutList` (the dictionary).
+3. After the repeat: **Get Contents of URL**
+   - URL: `https://lifestack-d5300-default-rtdb.firebaseio.com/external/workouts/[Formatted Date].json` — *(others: `.../external/u/<your-id>/workouts/[Formatted Date].json`)*
+   - Method: **PUT** (replaces that day's list so re-runs don't duplicate)
+   - Request Body: **JSON** → `WorkoutList`
+
+You can add these actions to the combined shortcut so one run does daily totals **and** the workout list. Re-running is safe: the daily totals PATCH overwrites each value, and the workouts PUT replaces the day's list.
+
+---
+
 ## What this does
 
 An iPhone Shortcut reads today's health data from Apple Health and writes it directly to the Daylign Firebase Realtime Database under the `external` node (e.g. `external/steps/2026-07-16 = 8421`). The dashboard reads this node read-only. The app's own writes go to the `lifestack` node, so nothing under `external` is ever overwritten by the app.

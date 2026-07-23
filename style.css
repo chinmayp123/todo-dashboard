@@ -6438,3 +6438,21 @@ body.onboard-open { overflow: hidden; }
 .watch-adv code { background: var(--bg-input); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
 
 .diet-shared-badge { background: var(--blue-bg); color: var(--blue); }
+
+/* ========== Apple Watch workouts (Cardio) ========== */
+.ww-list { display: flex; flex-direction: column; gap: 8px; }
+.ww-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+}
+.ww-icon { font-size: 20px; flex-shrink: 0; }
+.ww-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ww-main strong { font-size: 14px; color: var(--text-primary); }
+.ww-meta { font-size: 12.5px; color: var(--text-secondary); }
+.ww-import { flex-shrink: 0; padding: 7px 14px; font-size: 13px; }
+.ww-done { flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--green); }
+.ww-note { flex-shrink: 0; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }

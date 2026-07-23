@@ -218,6 +218,78 @@ function cardioCoach() {
   return recs;
 }
 
+// ---------- Apple Watch workouts (imported from Apple Health) ----------
+// Map Apple's workout activity name to one of our cardio types.
+function mapWatchWorkoutType(t) {
+  const s = String(t || '').toLowerCase();
+  if (s.indexOf('run') !== -1) return 'run';
+  if (s.indexOf('cycl') !== -1 || s.indexOf('bike') !== -1 || s.indexOf('ride') !== -1) return 'ride';
+  if (s.indexOf('swim') !== -1) return 'swim';
+  if (s.indexOf('strength') !== -1 || s.indexOf('weight') !== -1 || s.indexOf('functional') !== -1 || s.indexOf('core') !== -1) return 'strength';
+  return 'other';
+}
+
+// A watch workout counts as already in the log if a cardio session on that day
+// matches its type and distance — stops a hand-logged run and its watch copy
+// both landing in the log.
+function watchWorkoutImported(dateStr, w, ctype) {
+  const dist = Number(w.distance) || 0;
+  return cardioSessionsFor(dateStr).some(s =>
+    s.type === ctype && Math.abs((Number(s.distance) || 0) - dist) < Math.max(0.15, dist * 0.05));
+}
+
+function renderCardioWatchWorkouts() {
+  const wrap = $('#cardioWatchWorkouts');
+  if (!wrap) return;
+  const workouts = (typeof getExternalWorkouts === 'function') ? getExternalWorkouts(cardioDate) : [];
+  if (!workouts.length) { wrap.innerHTML = ''; wrap.hidden = true; return; }
+  wrap.hidden = false;
+  wrap.innerHTML = `<div class="card cardio-card">
+    <h2>⌚ Apple Watch workouts</h2>
+    <div class="ww-list">${workouts.map((w, i) => {
+      const ctype = mapWatchWorkoutType(w.type);
+      const cfg = CARDIO_TYPES[ctype] || { icon: '🏋️', unit: '' };
+      const importable = ['run', 'ride', 'swim'].indexOf(ctype) !== -1;
+      const dist = Number(w.distance) || 0;
+      const meta = [
+        dist ? `${Math.round(dist * 100) / 100} ${cfg.unit || ''}` : '',
+        w.minutes ? formatDuration(w.minutes) : '',
+        w.cal ? `${Math.round(w.cal)} cal` : '',
+      ].filter(Boolean).join(' · ');
+      const action = !importable
+        ? `<span class="ww-note">strength</span>`
+        : watchWorkoutImported(cardioDate, w, ctype)
+          ? `<span class="ww-done">✓ in log</span>`
+          : `<button type="button" class="btn-secondary ww-import" data-ww="${i}">Add to log</button>`;
+      return `<div class="ww-row">
+        <span class="ww-icon">${cfg.icon}</span>
+        <div class="ww-main"><strong>${esc(w.type || ctype)}</strong><span class="ww-meta">${esc(meta)}</span></div>
+        ${action}
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+  wrap.querySelectorAll('[data-ww]').forEach(b =>
+    b.addEventListener('click', () => importWatchWorkout(cardioDate, workouts[Number(b.dataset.ww)])));
+}
+
+function importWatchWorkout(dateStr, w) {
+  const ctype = mapWatchWorkoutType(w.type);
+  if (['run', 'ride', 'swim'].indexOf(ctype) === -1) { showToast('Only run, ride and swim import to Cardio'); return; }
+  state.cardio = state.cardio || [];
+  state.cardio.push({
+    id: 'c' + Date.now(),
+    date: dateStr,
+    type: ctype,
+    distance: Number(w.distance) || 0,
+    duration: Number(w.minutes) || 0,
+    notes: 'Imported from Apple Watch',
+    fromWatch: true,
+  });
+  saveData(state);
+  showToast(`${CARDIO_TYPES[ctype].label} added to your log`);
+  render();
+}
+
 // ---------- Render ----------
 function renderCardio() {
   const dateInput = $('#cardioDate');
@@ -228,6 +300,7 @@ function renderCardio() {
 
   renderCardioTypeTabs();
   renderCardioWatchChip();
+  renderCardioWatchWorkouts();
   renderCardioDayList();
   renderCardioWeek();
   renderCardioRace();

@@ -46,6 +46,16 @@ function getExternalRunDistance(dateStr) { return getExternalMetric('runDistance
 function getExternalCycleDistance(dateStr) { return getExternalMetric('cycleDistance', dateStr); }
 function getExternalSwimDistance(dateStr) { return getExternalMetric('swimDistance', dateStr); }
 
+// Individual Apple Watch workout sessions for a day, posted by the shortcut as
+// external/.../workouts/<date> = [{ type, minutes, distance, cal }, ...].
+// Firebase may hand back an array or a numeric-keyed object; normalize to array.
+function getExternalWorkouts(dateStr) {
+  const w = externalData && externalData.workouts ? externalData.workouts[dateStr] : null;
+  if (!w) return [];
+  const arr = Array.isArray(w) ? w : Object.values(w);
+  return arr.filter(x => x && typeof x === 'object');
+}
+
 function getExternalSleep(dateStr) {
   const v = getExternalMetric('sleep', dateStr);
   if (v === null) return null;
