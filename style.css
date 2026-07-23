@@ -6327,3 +6327,27 @@ body.onboard-open { overflow: hidden; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ========== Sidebar section header + Manage button ========== */
+.sidebar-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sidebar-section-head h3 { margin: 0; }
+.sidebar-manage-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+.sidebar-manage-btn:hover { color: var(--accent); background: var(--accent-glow); }

@@ -158,6 +158,12 @@ function bindEvents() {
   if (switchProfileBtn) switchProfileBtn.addEventListener('click', switchProfile);
   const sidebarProfile = $('#sidebarProfile');
   if (sidebarProfile) sidebarProfile.addEventListener('click', () => switchView('settings'));
+  // Quick access to the category/project manager from the sidebar (task views).
+  $$('[data-manage-taxonomy]').forEach(btn => btn.addEventListener('click', openTaxonomyModal));
+  const taxClose = $('#taxonomyModalClose');
+  if (taxClose) taxClose.addEventListener('click', closeTaxonomyModal);
+  const taxModal = $('#taxonomyModal');
+  if (taxModal) taxModal.addEventListener('click', e => { if (e.target === taxModal) closeTaxonomyModal(); });
   const editGoalsSettingsBtn = $('#editGoalsSettingsBtn');
   if (editGoalsSettingsBtn && typeof openGoalsModal === 'function') editGoalsSettingsBtn.addEventListener('click', openGoalsModal);
 
@@ -309,7 +315,12 @@ function applyModuleNav() {
 function render() {
   applyModuleNav();
   if (typeof renderGoalsSummary === 'function') renderGoalsSummary();
-  if (typeof renderTaxonomyManager === 'function') renderTaxonomyManager();
+  if (typeof renderTaxonomyManager === 'function') {
+    renderTaxonomyManager();
+    // Keep the popup in sync while it's open (add/delete/rename call render()).
+    const modal = $('#taxonomyModal');
+    if (modal && modal.classList.contains('active')) renderTaxonomyManager($('#taxonomyManagerModal'));
+  }
   renderSidebarCategories();
   renderSidebarProjects();
   renderDashboard();
@@ -449,10 +460,20 @@ function renameProjectById(id) {
   render();
 }
 
+function openTaxonomyModal() {
+  renderTaxonomyManager($('#taxonomyManagerModal'));
+  const m = $('#taxonomyModal');
+  if (m) m.classList.add('active');
+}
+function closeTaxonomyModal() {
+  const m = $('#taxonomyModal');
+  if (m) m.classList.remove('active');
+}
+
 // The always-available manager in Settings, so add/delete never depends on
 // being on a task view or discovering a hover-only × in the sidebar.
-function renderTaxonomyManager() {
-  const wrap = $('#taxonomyManager');
+function renderTaxonomyManager(target) {
+  const wrap = target || $('#taxonomyManager');
   if (!wrap) return;
   const row = (item, kind, count) => `
     <div class="tax-row">
@@ -468,31 +489,35 @@ function renderTaxonomyManager() {
       <h3>Categories</h3>
       <div class="tax-list">${state.categories.map(c => row(c, 'cat', state.tasks.filter(t => t.category === c.id).length)).join('') || '<p class="settings-desc">No categories yet.</p>'}</div>
       <div class="tax-add">
-        <input type="text" id="taxAddCat" placeholder="New category name" maxlength="30">
-        <button class="btn-secondary" id="taxAddCatBtn">Add</button>
+        <input type="text" class="tax-add-input" data-tax-add="cat" placeholder="New category name" maxlength="30">
+        <button class="btn-secondary" data-tax-add-btn="cat">Add</button>
       </div>
     </div>
     <div class="tax-group">
       <h3>Projects</h3>
       <div class="tax-list">${state.projects.map(p => row(p, 'proj', state.tasks.filter(t => t.project === p.id && t.status !== 'done').length)).join('') || '<p class="settings-desc">No projects yet.</p>'}</div>
       <div class="tax-add">
-        <input type="text" id="taxAddProj" placeholder="New project name" maxlength="30">
-        <button class="btn-secondary" id="taxAddProjBtn">Add</button>
+        <input type="text" class="tax-add-input" data-tax-add="proj" placeholder="New project name" maxlength="30">
+        <button class="btn-secondary" data-tax-add-btn="proj">Add</button>
       </div>
     </div>`;
 
+  // Everything is scoped to `wrap` (not global $) so the same markup can render
+  // in both the Settings card and the popup without id collisions.
   wrap.querySelectorAll('[data-tax-del]').forEach(b => b.addEventListener('click', () => {
     b.dataset.taxDel === 'cat' ? deleteCategoryById(b.dataset.id) : deleteProjectById(b.dataset.id);
   }));
   wrap.querySelectorAll('[data-tax-edit]').forEach(b => b.addEventListener('click', () => {
     b.dataset.taxEdit === 'cat' ? renameCategoryById(b.dataset.id) : renameProjectById(b.dataset.id);
   }));
-  const addCat = () => { const el = $('#taxAddCat'); if (addCategoryNamed(el.value)) el.value = ''; };
-  const addProj = () => { const el = $('#taxAddProj'); if (addProjectNamed(el.value)) el.value = ''; };
-  $('#taxAddCatBtn').addEventListener('click', addCat);
-  $('#taxAddProjBtn').addEventListener('click', addProj);
-  $('#taxAddCat').addEventListener('keydown', e => { if (e.key === 'Enter') addCat(); });
-  $('#taxAddProj').addEventListener('keydown', e => { if (e.key === 'Enter') addProj(); });
+  const addFrom = (kind) => {
+    const el = wrap.querySelector(`[data-tax-add="${kind}"]`);
+    if (!el) return;
+    const ok = kind === 'cat' ? addCategoryNamed(el.value) : addProjectNamed(el.value);
+    if (ok) el.value = '';
+  };
+  wrap.querySelectorAll('[data-tax-add-btn]').forEach(b => b.addEventListener('click', () => addFrom(b.dataset.taxAddBtn)));
+  wrap.querySelectorAll('[data-tax-add]').forEach(inp => inp.addEventListener('keydown', e => { if (e.key === 'Enter') addFrom(inp.dataset.taxAdd); }));
 }
 
 // ========== Backup / Restore ==========

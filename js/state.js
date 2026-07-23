@@ -1,25 +1,14 @@
 // ========== Data Layer ==========
-const DEFAULT_PROJECTS = [
-  { id: 'proj-1', name: 'Dashboard Redesign', color: '#3b82f6' },
-  { id: 'proj-2', name: 'API Migration', color: '#8b5cf6' },
-];
-
+// New installs and new profiles start EMPTY — no demo tasks or projects. The
+// app used to seed sample tasks so a first-ever run looked alive, but for real
+// accounts that just means someone's brand-new profile opens full of tasks that
+// were never theirs. Only the default categories remain, because creating a
+// task needs at least one category to file under.
 const DEFAULT_CATEGORIES = [
   { id: 'work', name: 'Work', color: '#6366f1' },
   { id: 'personal', name: 'Personal', color: '#22c55e' },
   { id: 'health', name: 'Health', color: '#ef4444' },
   { id: 'learning', name: 'Learning', color: '#eab308' },
-];
-
-const SAMPLE_TASKS = [
-  { id: '1', name: 'Design dashboard wireframes', description: 'Create mockups for the new analytics dashboard', priority: 'high', status: 'in-progress', category: 'work', project: 'proj-1', dueDate: getTodayOffset(2), created: getTodayOffset(-3), subtasks: [{ text: 'Research competitors', done: true }, { text: 'Sketch layouts', done: false }] },
-  { id: '2', name: 'Weekly grocery shopping', description: '', priority: 'medium', status: 'todo', category: 'personal', dueDate: getTodayOffset(1), created: getTodayOffset(-1), subtasks: [] },
-  { id: '3', name: 'Morning jog routine', description: '30 minutes around the park', priority: 'low', status: 'done', category: 'health', dueDate: getTodayOffset(0), created: getTodayOffset(-5), completedAt: getTodayOffset(-1), scheduledHour: 7, duration: 0.5, subtasks: [] },
-  { id: '4', name: 'Complete React tutorial', description: 'Finish chapters 8-12', priority: 'medium', status: 'in-progress', category: 'learning', dueDate: getTodayOffset(5), created: getTodayOffset(-7), subtasks: [{ text: 'Chapter 8 - Hooks', done: true }, { text: 'Chapter 9 - Context', done: true }, { text: 'Chapter 10 - Reducers', done: false }, { text: 'Chapter 11 - Testing', done: false }] },
-  { id: '5', name: 'Fix API authentication bug', description: 'Token refresh failing after 24h', priority: 'high', status: 'todo', category: 'work', project: 'proj-2', dueDate: getTodayOffset(-1), created: getTodayOffset(-2), subtasks: [] },
-  { id: '6', name: 'Schedule dentist appointment', description: '', priority: 'low', status: 'todo', category: 'health', dueDate: getTodayOffset(7), created: getTodayOffset(-4), subtasks: [] },
-  { id: '7', name: 'Prepare presentation slides', description: 'Quarterly review meeting', priority: 'high', status: 'todo', category: 'work', project: 'proj-1', dueDate: getTodayOffset(3), created: getTodayOffset(-1), subtasks: [{ text: 'Gather metrics', done: false }, { text: 'Create slides', done: false }, { text: 'Practice delivery', done: false }] },
-  { id: '8', name: 'Read "Atomic Habits"', description: 'Finish remaining 100 pages', priority: 'low', status: 'in-progress', category: 'learning', dueDate: getTodayOffset(10), created: getTodayOffset(-14), subtasks: [] },
 ];
 
 // Parse one localStorage key defensively. A single corrupt/truncated value
@@ -41,9 +30,9 @@ function safeParse(key, fallback) {
 
 function loadData() {
   return {
-    tasks: safeParse('tf_tasks', [...SAMPLE_TASKS]),
+    tasks: safeParse('tf_tasks', []),
     categories: safeParse('tf_categories', [...DEFAULT_CATEGORIES]),
-    projects: safeParse('tf_projects', [...DEFAULT_PROJECTS]),
+    projects: safeParse('tf_projects', []),
     gym: safeParse('tf_gym', []),
     cardio: safeParse('tf_cardio', []),
     // Which optional modules this profile shows. Missing key = on, so existing
