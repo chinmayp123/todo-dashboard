@@ -10,6 +10,45 @@ Pre-built shortcuts:
 
 ---
 
+## One combined shortcut (recommended)
+
+Instead of one shortcut per metric, build a single **"Sync Health to Daylign"** that reads everything and uploads it in **one network request** using a Firebase multi-path update. Then you have one shortcut and one nightly automation.
+
+**Actions, top to bottom:**
+
+1. **Date** → add **Format Date**: Date = *Current Date*, Format = Custom → `yyyy-MM-dd`. (This becomes the `Formatted Date` variable everything reuses.)
+2. **Find Health Samples** — Steps, Sort by Start Date, Limit 1 is *not* enough; instead add **Calculate Statistics → Sum** over “is in the last 1 day”. Name the result **Steps**.
+3. Repeat step 2 for each metric, each ending in a Sum/Average you name:
+   - **Active Energy** (Sum) → `Energy`
+   - **Apple Exercise Time** (Sum) → `Exercise`
+   - **Resting Heart Rate** (Average) → `RestingHR`
+   - **Sleep**, filter *Value is Asleep* (Sum, in **hr**) → `Sleep`
+4. Add a **Dictionary** action with one row per metric — the **key includes the date**:
+   | Key | Value |
+   |---|---|
+   | `steps/[Formatted Date]` | `Steps` |
+   | `activeEnergy/[Formatted Date]` | `Energy` |
+   | `exerciseMinutes/[Formatted Date]` | `Exercise` |
+   | `restingHR/[Formatted Date]` | `RestingHR` |
+   | `sleep/[Formatted Date]` | `Sleep` |
+
+   *Optional — feed the Cardio "⌚ Watch recorded" chip by adding Find Health Samples for these too:*
+   | Key | Value | Health sample |
+   |---|---|---|
+   | `runDistance/[Formatted Date]` | `RunDist` | Walking + Running Distance (Sum, mi) |
+   | `cycleDistance/[Formatted Date]` | `RideDist` | Cycling Distance (Sum, mi) |
+   | `swimDistance/[Formatted Date]` | `SwimDist` | Swimming Distance (Sum, yd) |
+5. **Get Contents of URL**:
+   - URL: `https://lifestack-d5300-default-rtdb.firebaseio.com/external.json` — *(everyone except the original profile uses `.../external/u/<your-id>.json`)*
+   - Method: **PATCH**
+   - Request Body: **JSON** → the **Dictionary** from step 4
+
+Firebase treats each slash-key (`steps/2026-07-23`) as a deep path, so that one PATCH writes all five values at once. Done — one shortcut, one upload.
+
+**Automate it:** Shortcuts app → Automation → *Time of Day* → nightly (e.g. 11:55 PM) → run this shortcut → turn off "Ask Before Running".
+
+---
+
 ## What this does
 
 An iPhone Shortcut reads today's health data from Apple Health and writes it directly to the Daylign Firebase Realtime Database under the `external` node (e.g. `external/steps/2026-07-16 = 8421`). The dashboard reads this node read-only. The app's own writes go to the `lifestack` node, so nothing under `external` is ever overwritten by the app.
