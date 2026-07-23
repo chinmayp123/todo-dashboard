@@ -6240,3 +6240,54 @@ body.onboard-open { overflow: hidden; }
   cursor: pointer;
 }
 .ob-skip:hover { color: var(--text-secondary); }
+
+/* ========== Categories & Projects manager (Settings) ========== */
+.taxonomy-manager { display: flex; flex-direction: column; gap: 22px; margin-top: 6px; }
+.tax-group h3 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.tax-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; }
+.tax-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.tax-row:last-child { border-bottom: none; }
+.tax-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tax-name { flex: 1; font-size: 14px; color: var(--text-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tax-count { font-size: 12px; color: var(--text-muted); background: var(--bg-input); padding: 2px 8px; border-radius: 999px; }
+.tax-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+.tax-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.tax-btn-del:hover { color: var(--red); }
+.tax-add { display: flex; gap: 8px; }
+.tax-add input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+.tax-add input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.tax-add .btn-secondary { flex-shrink: 0; }

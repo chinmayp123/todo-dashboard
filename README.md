@@ -12,7 +12,7 @@ Installable as a PWA, syncs across devices via Firebase, and works offline.
 
 ## For designers (start here for a design pass)
 
-Everything visual lives in **one file: `style.css`** (~5,000 lines). There is no CSS framework, no Tailwind, no CSS-in-JS — just plain CSS with custom properties.
+Everything visual lives in **one file: `style.css`** (~6,300 lines). There is no CSS framework, no Tailwind, no CSS-in-JS — just plain CSS with custom properties.
 
 **The entire theme is driven by CSS variables** defined at `:root` in `style.css`. Change these and the whole app reskins:
 
@@ -28,11 +28,25 @@ Everything visual lives in **one file: `style.css`** (~5,000 lines). There is no
 | `--font-display` / `--font-body` | Space Grotesk / Inter | Headings vs body |
 | `--shadow`, `--sidebar-width` | — | Elevation + layout |
 
-**Structure:** `index.html` holds all markup. Each screen is a `<div class="view" id="...View">` (dashboard, tasks, board, calendar, gym, diet, settings) toggled by `switchView()` in `js/app.js`. Content is grouped into `.card` blocks. The layout is a fixed left `.sidebar` + main content on desktop, collapsing to a top bar + bottom `.bottom-nav` on mobile (`@media (max-width: 900px)`).
+**Structure:** `index.html` holds all markup. Each screen is a `<div class="view" id="...View">` (dashboard, tasks, board, calendar, gym, cardio, diet, settings) toggled by `switchView()` in `js/app.js`. Content is grouped into `.card` blocks. The layout is a fixed left `.sidebar` + main content on desktop, collapsing to a top bar + bottom `.bottom-nav` on mobile (`@media (max-width: 900px)`).
 
 **It's fully responsive and theme-token-driven, so most redesigns are CSS-only** — recolor by editing the `:root` tokens, restyle components by editing their classes, no JS required. To preview changes, see *Running locally* below and open the app in a browser (or resize to phone width / use device-emulation).
 
-**Current aesthetic:** dark, indigo-accented, rounded cards, Space Grotesk display type, generous spacing, subtle glows and micro-animations.
+**Current aesthetic:** dark, indigo-accented, rounded cards, Space Grotesk display type, generous spacing, subtle glows and micro-animations. A light theme also exists (`:root[data-theme="light"]`) — style both when touching colors.
+
+### Redesigning the Gym, Cardio & Diet pages
+
+These three are the fitness/nutrition modules and share conventions. Each renders from its own JS file into a `#...View` container; the markup for their input controls is static in `index.html`, and the list/summary areas are filled by `innerHTML` from JS. **Restyling is CSS-only** — the JS writes class names, not inline styles (except progress widths / conic-gradient rings). Every one leads with its primary logging control at the top so logging never needs a scroll.
+
+| Page | View / file | Key sections (CSS class → what it is) | Notes for redesign |
+|---|---|---|---|
+| **Gym** | `#gymView` / `js/gym.js` | `.gym-date-bar` (day nav) · `.gym-add-bar` (add exercise + sets, top) · `.gym-stats` · `.gym-workout` (logged list) · `.weight-card` (body weight + spark) · `.coach-card` (targets + rule-based tips) · `.streak-card` (streak + 16-week heatmap) | Densest page. The heatmap and stat tiles are the visual anchors. |
+| **Cardio** | `#cardioView` / `js/cardio.js` | `.cardio-add-card` (type tabs run/ride/swim + distance/duration, top) · `.cardio-watch-chip` (Apple Health cross-check) · `.cardio-day` (sessions) · `.cardio-week` (weekly volume tiles) · `.cardio-race` (countdown + projected finish) · `.cardio-coach` | Newest page, lightest styling — most room for a designer. Pace shows in each sport's own units. |
+| **Diet** | `#dietView` / `js/diet.js` | `.diet-summary` (macro rings) · `.diet-log-card` (food search + add, incl. photo logging) · food list grouped by meal · `.diet-goals` · water tracker | Macro rings (`.diet-goals`) and the meal-grouped list are the centerpiece. |
+
+Shared building blocks worth reusing rather than reinventing: `.card`, `.btn-primary` / `.btn-secondary`, the stat-tile pattern (label + big value + sub), progress bars/rings, and status dots (`--green` / `--yellow` / `--red`). The three modules can be turned on/off in Settings, so don't assume all three are always in the nav.
+
+**Do not touch** the data flow: the render functions (`renderGym`, `renderCardio`, `renderDiet`) read from `state` and must not be made to write. Any save goes through `saveData(state)` on an explicit user action only — see the data-safety note in *Data & privacy*.
 
 ---
 

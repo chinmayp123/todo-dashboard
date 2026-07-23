@@ -309,6 +309,7 @@ function applyModuleNav() {
 function render() {
   applyModuleNav();
   if (typeof renderGoalsSummary === 'function') renderGoalsSummary();
+  if (typeof renderTaxonomyManager === 'function') renderTaxonomyManager();
   renderSidebarCategories();
   renderSidebarProjects();
   renderDashboard();
@@ -339,15 +340,7 @@ function renderSidebarCategories() {
   $$('.sidebar-del-btn[data-del-cat]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const id = btn.dataset.delCat;
-      const cat = state.categories.find(c => c.id === id);
-      const count = state.tasks.filter(t => t.category === id).length;
-      const msg = count ? `Delete "${cat.name}"? ${count} task(s) will become uncategorized.` : `Delete "${cat.name}"?`;
-      if (!confirm(msg)) return;
-      state.categories = state.categories.filter(c => c.id !== id);
-      state.tasks.forEach(t => { if (t.category === id) t.category = ''; });
-      saveData(state);
-      render();
+      deleteCategoryById(btn.dataset.delCat);
     });
   });
 }
@@ -378,28 +371,128 @@ function renderSidebarProjects() {
   $$('.sidebar-del-btn[data-del-proj]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const id = btn.dataset.delProj;
-      const proj = state.projects.find(p => p.id === id);
-      const count = state.tasks.filter(t => t.project === id).length;
-      const msg = count ? `Delete "${proj.name}"? ${count} task(s) will be unassigned.` : `Delete "${proj.name}"?`;
-      if (!confirm(msg)) return;
-      state.projects = state.projects.filter(p => p.id !== id);
-      state.tasks.forEach(t => { if (t.project === id) t.project = null; });
-      if (activeProject === id) activeProject = null;
-      saveData(state);
-      render();
+      deleteProjectById(btn.dataset.delProj);
     });
   });
 }
 
 function handleAddProject() {
   const name = prompt('Project name:');
-  if (!name || !name.trim()) return;
-  const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#22c55e', '#ef4444', '#eab308'];
-  const color = colors[state.projects.length % colors.length];
-  state.projects.push({ id: 'proj-' + Date.now(), name: name.trim(), color });
+  addProjectNamed(name);
+}
+
+// ---- Shared category/project mutations, used by both the sidebar and the
+// Settings manager so add/rename/delete behave identically everywhere. ----
+const TAXONOMY_COLORS = ['#6366f1', '#22c55e', '#ef4444', '#eab308', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+
+function addCategoryNamed(name) {
+  if (!name || !name.trim()) return false;
+  const clean = name.trim();
+  const id = clean.toLowerCase().replace(/\s+/g, '-');
+  if (state.categories.some(c => c.id === id)) { showToast('A category with that name already exists'); return false; }
+  state.categories.push({ id, name: clean, color: TAXONOMY_COLORS[state.categories.length % TAXONOMY_COLORS.length] });
   saveData(state);
   render();
+  return true;
+}
+
+function addProjectNamed(name) {
+  if (!name || !name.trim()) return false;
+  state.projects.push({ id: 'proj-' + Date.now(), name: name.trim(), color: TAXONOMY_COLORS[state.projects.length % TAXONOMY_COLORS.length] });
+  saveData(state);
+  render();
+  return true;
+}
+
+function deleteCategoryById(id) {
+  const cat = state.categories.find(c => c.id === id);
+  if (!cat) return;
+  const count = state.tasks.filter(t => t.category === id).length;
+  const msg = count ? `Delete "${cat.name}"? ${count} task(s) will become uncategorized.` : `Delete "${cat.name}"?`;
+  if (!confirm(msg)) return;
+  state.categories = state.categories.filter(c => c.id !== id);
+  state.tasks.forEach(t => { if (t.category === id) t.category = ''; });
+  saveData(state);
+  render();
+}
+
+function deleteProjectById(id) {
+  const proj = state.projects.find(p => p.id === id);
+  if (!proj) return;
+  const count = state.tasks.filter(t => t.project === id).length;
+  const msg = count ? `Delete "${proj.name}"? ${count} task(s) will be unassigned.` : `Delete "${proj.name}"?`;
+  if (!confirm(msg)) return;
+  state.projects = state.projects.filter(p => p.id !== id);
+  state.tasks.forEach(t => { if (t.project === id) t.project = null; });
+  if (activeProject === id) activeProject = null;
+  saveData(state);
+  render();
+}
+
+function renameCategoryById(id) {
+  const cat = state.categories.find(c => c.id === id);
+  if (!cat) return;
+  const name = prompt('Rename category:', cat.name);
+  if (!name || !name.trim()) return;
+  cat.name = name.trim(); // keep the id stable so existing tasks stay linked
+  saveData(state);
+  render();
+}
+
+function renameProjectById(id) {
+  const proj = state.projects.find(p => p.id === id);
+  if (!proj) return;
+  const name = prompt('Rename project:', proj.name);
+  if (!name || !name.trim()) return;
+  proj.name = name.trim();
+  saveData(state);
+  render();
+}
+
+// The always-available manager in Settings, so add/delete never depends on
+// being on a task view or discovering a hover-only × in the sidebar.
+function renderTaxonomyManager() {
+  const wrap = $('#taxonomyManager');
+  if (!wrap) return;
+  const row = (item, kind, count) => `
+    <div class="tax-row">
+      <span class="tax-dot" style="background:${item.color}"></span>
+      <span class="tax-name">${esc(item.name)}</span>
+      <span class="tax-count">${count}</span>
+      <button class="tax-btn" data-tax-edit="${kind}" data-id="${item.id}" title="Rename">✎</button>
+      <button class="tax-btn tax-btn-del" data-tax-del="${kind}" data-id="${item.id}" title="Delete">&times;</button>
+    </div>`;
+
+  wrap.innerHTML = `
+    <div class="tax-group">
+      <h3>Categories</h3>
+      <div class="tax-list">${state.categories.map(c => row(c, 'cat', state.tasks.filter(t => t.category === c.id).length)).join('') || '<p class="settings-desc">No categories yet.</p>'}</div>
+      <div class="tax-add">
+        <input type="text" id="taxAddCat" placeholder="New category name" maxlength="30">
+        <button class="btn-secondary" id="taxAddCatBtn">Add</button>
+      </div>
+    </div>
+    <div class="tax-group">
+      <h3>Projects</h3>
+      <div class="tax-list">${state.projects.map(p => row(p, 'proj', state.tasks.filter(t => t.project === p.id && t.status !== 'done').length)).join('') || '<p class="settings-desc">No projects yet.</p>'}</div>
+      <div class="tax-add">
+        <input type="text" id="taxAddProj" placeholder="New project name" maxlength="30">
+        <button class="btn-secondary" id="taxAddProjBtn">Add</button>
+      </div>
+    </div>`;
+
+  wrap.querySelectorAll('[data-tax-del]').forEach(b => b.addEventListener('click', () => {
+    b.dataset.taxDel === 'cat' ? deleteCategoryById(b.dataset.id) : deleteProjectById(b.dataset.id);
+  }));
+  wrap.querySelectorAll('[data-tax-edit]').forEach(b => b.addEventListener('click', () => {
+    b.dataset.taxEdit === 'cat' ? renameCategoryById(b.dataset.id) : renameProjectById(b.dataset.id);
+  }));
+  const addCat = () => { const el = $('#taxAddCat'); if (addCategoryNamed(el.value)) el.value = ''; };
+  const addProj = () => { const el = $('#taxAddProj'); if (addProjectNamed(el.value)) el.value = ''; };
+  $('#taxAddCatBtn').addEventListener('click', addCat);
+  $('#taxAddProjBtn').addEventListener('click', addProj);
+  $('#taxAddCat').addEventListener('keydown', e => { if (e.key === 'Enter') addCat(); });
+  $('#taxAddProj').addEventListener('keydown', e => { if (e.key === 'Enter') addProj(); });
 }
 
 // ========== Backup / Restore ==========
