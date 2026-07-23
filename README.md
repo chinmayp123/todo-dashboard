@@ -61,6 +61,13 @@ Everything visual lives in **one file: `style.css`** (~5,000 lines). There is no
 - **Consistency** — day streak, weekly count, and a 16-week GitHub-style heatmap
 - Built-in rest timer
 
+### Cardio
+- Log **runs, rides and swims** as sessions (distance + duration), with pace computed in each discipline's own units — min/mi, mph, min/100yd
+- **Weekly volume** — run mileage vs target, longest single run, ride and swim totals, training days
+- **Race countdown and projected finish** for 5K / 10K / half / marathon, using Riegel's formula against your best recent effort
+- **Coach** — the 10%-a-week volume rule, long-run share of weekly mileage, and taper timing as the race approaches
+- Session calories use pace-scaled MET values and feed the same Net Cals figure as lifting
+
 ### Diet
 - 200+ food database (incl. South Indian foods and fast-food chains) with live search (Open Food Facts + USDA fallback), custom foods, serving math, and meal grouping
 - Macro goal tracker (calories, protein, carbs, fat) with net-calorie awareness and protein-aware overage advice
@@ -124,6 +131,7 @@ js/
   calendar.js         — Month/week calendar + events
   modal.js            — Task create/edit modal
   gym.js              — Workout logging, trend weight, coach, streaks, PRs
+  cardio.js           — Run/ride/swim sessions, pace, weekly volume, race prediction
   diet.js             — Food tracking, database, API lookups, goals, water
   food-photo.js       — Photo food logging (Claude vision)
   voice.js            — Voice / natural-language commands (Web Speech + Claude)

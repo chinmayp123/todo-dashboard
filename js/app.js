@@ -143,6 +143,7 @@ function bindEvents() {
 
   // Gym & Diet
   bindGymEvents();
+  if (typeof bindCardioEvents === 'function') bindCardioEvents();
   bindDietEvents();
   bindGoalsEvents();
   if (typeof bindPhotoEvents === 'function') bindPhotoEvents();
@@ -175,11 +176,14 @@ function bindEvents() {
 // ========== Views ==========
 // The header's top-right button adapts to the current view: it logs weight in
 // the Gym, logs food in Diet, and creates a task everywhere else.
-const HEADER_ACTION_LABELS = { gym: 'Log Weight', diet: 'Log Food' };
+const HEADER_ACTION_LABELS = { gym: 'Log Weight', cardio: 'Log Session', diet: 'Log Food' };
 
 function headerPrimaryAction() {
   if (currentView === 'gym') {
     const el = $('#weightInput');
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
+  } else if (currentView === 'cardio') {
+    const el = $('#cardioDistance');
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
   } else if (currentView === 'diet') {
     const el = $('#dietFoodName');
@@ -203,7 +207,7 @@ function switchView(view) {
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   $$('.view').forEach(v => v.classList.remove('active'));
 
-  const titles = { dashboard: 'Dashboard', tasks: 'All Tasks', board: 'Board', calendar: 'Calendar', gym: 'Gym', diet: 'Diet', settings: 'Settings' };
+  const titles = { dashboard: 'Dashboard', tasks: 'All Tasks', board: 'Board', calendar: 'Calendar', gym: 'Gym', cardio: 'Cardio', diet: 'Diet', settings: 'Settings' };
   $('#viewTitle').textContent = titles[view];
   $(`#${view}View`).classList.add('active');
   updateHeaderActionBtn(view);
@@ -221,6 +225,7 @@ function render() {
   renderBoard();
   renderCalendar();
   renderGym();
+  if (typeof renderCardio === 'function') renderCardio();
   renderDiet();
   populateCategoryDropdowns();
 }

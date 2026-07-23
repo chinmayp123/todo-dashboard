@@ -52,8 +52,12 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7v10"/><path d="M18 7v10"/><path d="M3 9v6"/><path d="M21 9v6"/><path d="M6 12h12"/><rect x="5" y="7" width="2" height="10" rx="1"/><rect x="17" y="7" width="2" height="10" rx="1"/><rect x="2" y="9" width="2" height="6" rx="0.5"/><rect x="20" y="9" width="2" height="6" rx="0.5"/></svg>
           Gym
         </button>
+        <button class="nav-btn" data-view="cardio">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="1.8"/><path d="M8 21l3-6 4-2-2-5-4 2-2 3"/><path d="M15 13l3 3 1 5"/></svg>
+          Cardio
+        </button>
         <button class="nav-btn" data-view="diet">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/></svg>
           Diet
         </button>
         <div class="nav-divider"></div>
@@ -368,6 +372,74 @@
       </div>
 
       <!-- Diet View -->
+      <!-- Cardio View -->
+      <div class="view" id="cardioView">
+        <div class="gym-date-bar">
+          <button class="gym-date-nav" id="cardioPrevDay">&lt;</button>
+          <button class="gym-date-today" id="cardioToday">Today</button>
+          <button class="gym-date-nav" id="cardioNextDay">&gt;</button>
+          <span class="gym-date-label" id="cardioDateLabel"></span>
+          <input type="date" id="cardioDate" class="gym-date-input">
+        </div>
+
+        <!-- Log a session (top, so logging never needs a scroll) -->
+        <div class="cardio-add-card">
+          <div class="cardio-type-tabs" id="cardioTypeTabs"></div>
+          <div class="cardio-watch-chip" id="cardioWatchChip" hidden></div>
+          <div class="cardio-add-grid">
+            <div class="cardio-field">
+              <label id="cardioDistanceLabel" for="cardioDistance">Distance (mi)</label>
+              <input type="number" id="cardioDistance" step="0.01" min="0" inputmode="decimal" placeholder="3.1">
+            </div>
+            <div class="cardio-field">
+              <label for="cardioDuration">Duration (min)</label>
+              <input type="number" id="cardioDuration" step="0.1" min="0" inputmode="decimal" placeholder="28">
+            </div>
+            <div class="cardio-field cardio-field-wide">
+              <label for="cardioNotes">Notes</label>
+              <input type="text" id="cardioNotes" placeholder="easy pace, felt strong" maxlength="120">
+            </div>
+          </div>
+          <button class="btn-primary cardio-save-btn" id="cardioSaveBtn">Log session</button>
+        </div>
+
+        <!-- This day -->
+        <div class="cardio-day" id="cardioDayList"></div>
+
+        <!-- This week -->
+        <div class="card cardio-card">
+          <h2>This week</h2>
+          <div class="cardio-week" id="cardioWeekStats"></div>
+        </div>
+
+        <!-- Race -->
+        <div class="card cardio-card cardio-race" id="cardioRace"></div>
+
+        <div class="card cardio-card">
+          <h2>Race target</h2>
+          <div class="cardio-race-form">
+            <div class="cardio-field">
+              <label for="cardioRaceType">Distance</label>
+              <select id="cardioRaceType"></select>
+            </div>
+            <div class="cardio-field">
+              <label for="cardioRaceDate">Race date</label>
+              <input type="date" id="cardioRaceDate">
+            </div>
+            <div class="cardio-field">
+              <label for="cardioWeeklyTarget">Weekly run target (mi)</label>
+              <input type="number" id="cardioWeeklyTarget" step="1" min="0" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <!-- Coach -->
+        <div class="card cardio-card">
+          <h2>Coach</h2>
+          <div class="cardio-coach" id="cardioCoach"></div>
+        </div>
+      </div>
+
       <div class="view" id="dietView">
         <!-- Diet Date Navigation -->
         <div class="diet-date-bar">
@@ -565,6 +637,10 @@
     <div class="more-sheet">
       <div class="more-sheet-handle"></div>
       <div class="more-sheet-label">More</div>
+      <button class="more-item" data-view="cardio" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="1.8"/><path d="M8 21l3-6 4-2-2-5-4 2-2 3"/><path d="M15 13l3 3 1 5"/></svg>
+        Cardio
+      </button>
       <button class="more-item" data-view="calendar" type="button">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Calendar
@@ -840,6 +916,7 @@
   <script src="js/board.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/gym.js"></script>
+  <script src="js/cardio.js"></script>
   <script src="js/diet.js"></script>
   <script src="js/food-photo.js"></script>
   <script src="js/voice.js"></script>

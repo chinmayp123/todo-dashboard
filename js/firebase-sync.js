@@ -38,6 +38,14 @@ function getExternalExerciseMinutes(dateStr) { return getExternalMetric('exercis
 function getExternalRestingHR(dateStr) { return getExternalMetric('restingHR', dateStr); }
 // Hours slept, keyed by the morning you woke up. Values over 24 are assumed
 // to be minutes (Shortcut unit set to min instead of hr) and normalized.
+// Daily distance totals from Apple Health, used only as a cross-check chip in
+// the Cardio view — sessions are never created from these automatically, or a
+// manually logged run and its watch recording would both count.
+// Run/ride are miles; swim is yards.
+function getExternalRunDistance(dateStr) { return getExternalMetric('runDistance', dateStr); }
+function getExternalCycleDistance(dateStr) { return getExternalMetric('cycleDistance', dateStr); }
+function getExternalSwimDistance(dateStr) { return getExternalMetric('swimDistance', dateStr); }
+
 function getExternalSleep(dateStr) {
   const v = getExternalMetric('sleep', dateStr);
   if (v === null) return null;
@@ -109,6 +117,7 @@ function saveToFirebase(data) {
     categories: data.categories || [],
     projects: data.projects || [],
     gym: data.gym || [],
+    cardio: data.cardio || [],
     diet: data.diet || [],
     customFoods: data.customFoods || {},
     water: data.water || {},

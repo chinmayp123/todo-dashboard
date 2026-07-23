@@ -1,0 +1,466 @@
+// ========== Cardio ==========
+// Endurance training: running, cycling, swimming. Separate from Gym because
+// the unit of work is a session (distance + duration), not sets and reps, and
+// the interesting numbers are pace and weekly volume rather than tonnage.
+
+const CARDIO_TYPES = {
+  run:  { label: 'Run',   icon: '🏃', unit: 'mi', unitLong: 'miles', paceLabel: 'min/mi' },
+  ride: { label: 'Ride',  icon: '🚴', unit: 'mi', unitLong: 'miles', paceLabel: 'mph' },
+  swim: { label: 'Swim',  icon: '🏊', unit: 'yd', unitLong: 'yards', paceLabel: 'min/100yd' },
+};
+
+// Races people actually train for, in miles. Half marathon is the default
+// because that is what this view was built for.
+const RACE_DISTANCES = {
+  '5k':      { label: '5K',            miles: 3.107 },
+  '10k':     { label: '10K',           miles: 6.214 },
+  'half':    { label: 'Half Marathon', miles: 13.109 },
+  'full':    { label: 'Marathon',      miles: 26.219 },
+};
+
+let cardioDate = getTodayStr();
+let cardioType = 'run';
+
+function cardioGoals() {
+  const g = state.goals || {};
+  return {
+    raceKey: RACE_DISTANCES[g.raceKey] ? g.raceKey : 'half',
+    raceDate: g.raceDate || '',
+    weeklyMiles: Number(g.weeklyMiles) > 0 ? Number(g.weeklyMiles) : 15,
+  };
+}
+
+function cardioSessionsFor(dateStr) {
+  return (state.cardio || []).filter(s => s.date === dateStr);
+}
+
+// ---------- Pace ----------
+// Each discipline reports the number its athletes actually talk in: runners
+// think in minutes per mile, cyclists in mph, swimmers in minutes per 100yd.
+function paceFor(session) {
+  const dist = Number(session.distance) || 0;
+  const mins = Number(session.duration) || 0;
+  if (dist <= 0 || mins <= 0) return null;
+  if (session.type === 'ride') return { value: dist / (mins / 60), label: 'mph', text: (dist / (mins / 60)).toFixed(1) + ' mph' };
+  if (session.type === 'swim') {
+    const per100 = mins / (dist / 100);
+    return { value: per100, label: 'min/100yd', text: formatPaceMinutes(per100) + ' /100yd' };
+  }
+  const perMile = mins / dist;
+  return { value: perMile, label: 'min/mi', text: formatPaceMinutes(perMile) + ' /mi' };
+}
+
+function formatPaceMinutes(mins) {
+  if (!isFinite(mins) || mins <= 0) return '—';
+  const m = Math.floor(mins);
+  const s = Math.round((mins - m) * 60);
+  // 7:60 is not a pace — carry the rounding into the minutes.
+  if (s === 60) return (m + 1) + ':00';
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function formatDuration(mins) {
+  const total = Math.round(Number(mins) || 0);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+// ---------- Calorie burn ----------
+// MET values scale with effort, so a 7:00/mi run does not score the same as a
+// 12:00/mi shuffle. These linear fits track the Compendium of Physical
+// Activities closely across the range people actually train in.
+function cardioMet(session) {
+  const pace = paceFor(session);
+  if (!pace) return 0;
+  if (session.type === 'ride') {
+    // ~8.4 MET at 12 mph, ~12.3 at 20 mph
+    return Math.max(4, Math.min(16, 0.49 * pace.value + 2.5));
+  }
+  if (session.type === 'swim') {
+    return 8.3; // moderate freestyle laps
+  }
+  const mph = 60 / pace.value;
+  // ~9.9 MET at 10:00/mi, ~12.4 at 8:00/mi
+  return Math.max(6, Math.min(19, 1.65 * mph));
+}
+
+function cardioBurnForDate(dateStr) {
+  const kg = latestBodyWeightLbs() * 0.4536;
+  return Math.round(cardioSessionsFor(dateStr).reduce((cal, s) => {
+    return cal + cardioMet(s) * kg * ((Number(s.duration) || 0) / 60);
+  }, 0));
+}
+
+// ---------- Weekly volume ----------
+function cardioWeekStart(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() - d.getDay()); // weeks start Sunday, matching the calendar
+  return toLocalDateStr(d);
+}
+
+function cardioWeekStats(weekStartStr) {
+  const start = new Date(weekStartStr + 'T12:00:00');
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    days.push(toLocalDateStr(d));
+  }
+  const sessions = (state.cardio || []).filter(s => days.indexOf(s.date) !== -1);
+  const stats = { sessions: sessions.length, days: new Set(sessions.map(s => s.date)).size, byType: {}, runMiles: 0, longestRun: 0, totalMinutes: 0 };
+  Object.keys(CARDIO_TYPES).forEach(t => { stats.byType[t] = { distance: 0, minutes: 0, count: 0 }; });
+  sessions.forEach(s => {
+    const bucket = stats.byType[s.type];
+    if (!bucket) return;
+    bucket.distance += Number(s.distance) || 0;
+    bucket.minutes += Number(s.duration) || 0;
+    bucket.count += 1;
+    stats.totalMinutes += Number(s.duration) || 0;
+    if (s.type === 'run') {
+      stats.runMiles += Number(s.distance) || 0;
+      if ((Number(s.distance) || 0) > stats.longestRun) stats.longestRun = Number(s.distance) || 0;
+    }
+  });
+  return stats;
+}
+
+// ---------- Race prediction ----------
+// Riegel's formula: T2 = T1 * (D2/D1)^1.06. Well established for predicting
+// across race distances, and honest about its limits — it assumes you have
+// actually trained for the longer distance, which is exactly what the weekly
+// mileage check below is for.
+function predictRaceTime(raceMiles) {
+  const runs = (state.cardio || [])
+    .filter(s => s.type === 'run' && Number(s.distance) >= 3 && Number(s.duration) > 0)
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, 10);
+  if (!runs.length) return null;
+  // Best recent effort, not the average — prediction should reflect what the
+  // legs can do on a good day, which is what race day is.
+  let best = null;
+  runs.forEach(s => {
+    const t = (Number(s.duration) || 0) * Math.pow(raceMiles / Number(s.distance), 1.06);
+    if (best === null || t < best.time) best = { time: t, from: s };
+  });
+  return best;
+}
+
+function formatRaceTime(mins) {
+  const total = Math.round(mins * 60);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const race = new Date(dateStr + 'T12:00:00');
+  const today = new Date(getTodayStr() + 'T12:00:00');
+  return Math.round((race - today) / (1000 * 60 * 60 * 24));
+}
+
+// ---------- Coach ----------
+// Deliberately few rules, each tied to a number on screen. Endurance advice is
+// mostly "build gradually and run long once a week"; anything more prescriptive
+// would be guessing at a plan we cannot see.
+function cardioCoach() {
+  const g = cardioGoals();
+  const race = RACE_DISTANCES[g.raceKey];
+  const thisWeek = cardioWeekStats(cardioWeekStart(getTodayStr()));
+  const prevWeekStart = (() => {
+    const d = new Date(cardioWeekStart(getTodayStr()) + 'T12:00:00');
+    d.setDate(d.getDate() - 7);
+    return toLocalDateStr(d);
+  })();
+  const lastWeek = cardioWeekStats(prevWeekStart);
+  const recs = [];
+  const days = daysUntil(g.raceDate);
+
+  if (!state.cardio || !state.cardio.length) {
+    recs.push({ type: 'info', text: 'Log your first run, ride or swim and this fills in with pace, weekly volume and a predicted finish time.' });
+    return recs;
+  }
+
+  // 10% rule — the classic overuse guard.
+  if (lastWeek.runMiles > 0 && thisWeek.runMiles > lastWeek.runMiles * 1.1) {
+    recs.push({ type: 'warn', text: `Run volume is up ${Math.round((thisWeek.runMiles / lastWeek.runMiles - 1) * 100)}% on last week (${lastWeek.runMiles.toFixed(1)} → ${thisWeek.runMiles.toFixed(1)} mi). Jumps over ~10% a week are where injuries come from — hold here next week.` });
+  }
+
+  // Long run should be roughly a third of weekly volume, and needs to approach
+  // race distance before race day.
+  if (thisWeek.runMiles >= 5 && thisWeek.longestRun < thisWeek.runMiles * 0.25) {
+    recs.push({ type: 'warn', text: `Your longest run this week is ${thisWeek.longestRun.toFixed(1)} mi out of ${thisWeek.runMiles.toFixed(1)} total. One genuinely long run is what builds endurance — aim for about a third of the week in a single effort.` });
+  }
+
+  if (days !== null && days > 0 && race) {
+    if (days <= 14 && thisWeek.runMiles > g.weeklyMiles) {
+      recs.push({ type: 'info', text: `${days} days out — this is taper time. Cut weekly volume by 30–40% and keep the intensity, not the mileage.` });
+    } else if (days > 21 && thisWeek.longestRun < race.miles * 0.6) {
+      recs.push({ type: 'info', text: `Longest run so far is ${thisWeek.longestRun.toFixed(1)} mi. Build toward ${(race.miles * 0.75).toFixed(1)}+ mi before ${race.label} day — you do not need the full distance in training, but you need close.` });
+    }
+  }
+
+  if (thisWeek.days === 0) {
+    recs.push({ type: 'warn', text: 'Nothing logged this week yet. Consistency beats any single session.' });
+  } else if (thisWeek.days >= 4) {
+    recs.push({ type: 'good', text: `${thisWeek.days} training days this week — that is the habit that gets you to the start line.` });
+  }
+
+  const swim = thisWeek.byType.swim;
+  const ride = thisWeek.byType.ride;
+  if (swim.count > 0 || ride.count > 0) {
+    recs.push({ type: 'good', text: `Cross-training logged (${[swim.count ? swim.count + ' swim' : '', ride.count ? ride.count + ' ride' : ''].filter(Boolean).join(', ')}). Low-impact volume builds aerobic base without adding pounding.` });
+  }
+
+  return recs;
+}
+
+// ---------- Render ----------
+function renderCardio() {
+  const dateInput = $('#cardioDate');
+  if (!dateInput) return;
+  dateInput.value = cardioDate;
+  const label = $('#cardioDateLabel');
+  if (label) label.textContent = formatDate(cardioDate);
+
+  renderCardioTypeTabs();
+  renderCardioWatchChip();
+  renderCardioDayList();
+  renderCardioWeek();
+  renderCardioRace();
+  renderCardioCoach();
+}
+
+function renderCardioTypeTabs() {
+  const wrap = $('#cardioTypeTabs');
+  if (!wrap) return;
+  wrap.innerHTML = Object.keys(CARDIO_TYPES).map(t => {
+    const cfg = CARDIO_TYPES[t];
+    return `<button type="button" class="cardio-type-btn${t === cardioType ? ' active' : ''}" data-cardio-type="${t}">
+      <span class="cardio-type-icon">${cfg.icon}</span>${cfg.label}
+    </button>`;
+  }).join('');
+
+  const distLabel = $('#cardioDistanceLabel');
+  if (distLabel) distLabel.textContent = `Distance (${CARDIO_TYPES[cardioType].unit})`;
+  const distInput = $('#cardioDistance');
+  if (distInput) distInput.placeholder = cardioType === 'swim' ? '1200' : '3.1';
+}
+
+// Cross-check against what the watch recorded, without ever creating a session
+// from it — double counting a run is worse than not importing it.
+function renderCardioWatchChip() {
+  const chip = $('#cardioWatchChip');
+  if (!chip) return;
+  const getters = {
+    run: typeof getExternalRunDistance === 'function' ? getExternalRunDistance : null,
+    ride: typeof getExternalCycleDistance === 'function' ? getExternalCycleDistance : null,
+    swim: typeof getExternalSwimDistance === 'function' ? getExternalSwimDistance : null,
+  };
+  const fn = getters[cardioType];
+  const watch = fn ? fn(cardioDate) : null;
+  if (watch === null) { chip.hidden = true; return; }
+  const logged = cardioSessionsFor(cardioDate)
+    .filter(s => s.type === cardioType)
+    .reduce((sum, s) => sum + (Number(s.distance) || 0), 0);
+  const unit = CARDIO_TYPES[cardioType].unit;
+  const rounded = cardioType === 'swim' ? Math.round(watch) : Math.round(watch * 100) / 100;
+  chip.hidden = false;
+  chip.innerHTML = `⌚ Watch recorded <strong>${rounded} ${unit}</strong> of ${CARDIO_TYPES[cardioType].label.toLowerCase()}ning this day` +
+    (logged > 0 ? ` · you logged ${Math.round(logged * 100) / 100} ${unit}` : ` · <button type="button" class="cardio-watch-fill" data-fill="${rounded}">use this</button>`);
+}
+
+function renderCardioDayList() {
+  const list = $('#cardioDayList');
+  if (!list) return;
+  const sessions = cardioSessionsFor(cardioDate);
+  if (!sessions.length) {
+    list.innerHTML = '<div class="empty-state"><p>Nothing logged for this day</p></div>';
+    return;
+  }
+  const burn = cardioBurnForDate(cardioDate);
+  list.innerHTML = sessions.map((s) => {
+    const cfg = CARDIO_TYPES[s.type] || CARDIO_TYPES.run;
+    const pace = paceFor(s);
+    return `
+      <div class="cardio-session">
+        <span class="cardio-session-icon">${cfg.icon}</span>
+        <div class="cardio-session-main">
+          <div class="cardio-session-top">
+            <strong>${Math.round((Number(s.distance) || 0) * 100) / 100} ${cfg.unit}</strong>
+            <span class="cardio-session-dur">${formatDuration(s.duration)}</span>
+            ${pace ? `<span class="cardio-session-pace">${pace.text}</span>` : ''}
+          </div>
+          ${s.notes ? `<div class="cardio-session-notes">${esc(s.notes)}</div>` : ''}
+        </div>
+        <button class="cardio-session-del" data-del-cardio="${s.id}" title="Delete this session">&times;</button>
+      </div>`;
+  }).join('') + `<div class="cardio-day-burn">≈ ${burn} cal burned</div>`;
+}
+
+function renderCardioWeek() {
+  const wrap = $('#cardioWeekStats');
+  if (!wrap) return;
+  const g = cardioGoals();
+  const stats = cardioWeekStats(cardioWeekStart(cardioDate));
+  const pct = g.weeklyMiles > 0 ? Math.min(100, Math.round((stats.runMiles / g.weeklyMiles) * 100)) : 0;
+  const tiles = [
+    { label: 'Run', value: stats.runMiles.toFixed(1), sub: `of ${g.weeklyMiles} mi target` },
+    { label: 'Longest', value: stats.longestRun.toFixed(1), sub: 'mi single run' },
+    { label: 'Ride', value: stats.byType.ride.distance.toFixed(1), sub: 'mi' },
+    { label: 'Swim', value: Math.round(stats.byType.swim.distance), sub: 'yd' },
+    { label: 'Time', value: formatDuration(stats.totalMinutes), sub: `${stats.days} day${stats.days === 1 ? '' : 's'}` },
+  ];
+  wrap.innerHTML = tiles.map(t => `
+    <div class="cardio-week-tile">
+      <span class="cardio-week-label">${t.label}</span>
+      <span class="cardio-week-value">${t.value}</span>
+      <span class="cardio-week-sub">${t.sub}</span>
+    </div>`).join('') +
+    `<div class="cardio-week-bar"><div class="cardio-week-fill" style="width:${pct}%"></div></div>`;
+}
+
+function renderCardioRace() {
+  const wrap = $('#cardioRace');
+  if (!wrap) return;
+  const g = cardioGoals();
+  const race = RACE_DISTANCES[g.raceKey];
+  const days = daysUntil(g.raceDate);
+  const pred = predictRaceTime(race.miles);
+
+  const countdown = (days === null || !g.raceDate)
+    ? '<span class="cardio-race-sub">Set a race date to start the countdown</span>'
+    : days > 0
+      ? `<span class="cardio-race-count">${days}</span><span class="cardio-race-sub">day${days === 1 ? '' : 's'} to go · ${Math.floor(days / 7)} week${Math.floor(days / 7) === 1 ? '' : 's'}</span>`
+      : days === 0
+        ? '<span class="cardio-race-count">Today</span><span class="cardio-race-sub">Race day — good luck</span>'
+        : `<span class="cardio-race-sub">Race was ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} ago</span>`;
+
+  wrap.innerHTML = `
+    <div class="cardio-race-head">
+      <h2>${race.label}</h2>
+      <span class="cardio-race-dist">${race.miles.toFixed(1)} mi</span>
+    </div>
+    <div class="cardio-race-count-wrap">${countdown}</div>
+    <div class="cardio-race-pred">
+      ${pred
+        ? `<span class="cardio-race-time">${formatRaceTime(pred.time)}</span>
+           <span class="cardio-race-sub">projected finish, from your ${Number(pred.from.distance).toFixed(1)} mi on ${formatDate(pred.from.date)}</span>`
+        : '<span class="cardio-race-sub">Log a run of 3 mi or longer for a projected finish time</span>'}
+    </div>`;
+}
+
+function renderCardioCoach() {
+  const wrap = $('#cardioCoach');
+  if (!wrap) return;
+  const recs = cardioCoach();
+  wrap.innerHTML = recs.map(r => `
+    <div class="cardio-rec cardio-rec-${r.type}">
+      <span class="cardio-rec-dot"></span>
+      <span>${r.text}</span>
+    </div>`).join('');
+}
+
+// ---------- Actions ----------
+function addCardioSession() {
+  const distEl = $('#cardioDistance');
+  const durEl = $('#cardioDuration');
+  const notesEl = $('#cardioNotes');
+  const distance = parseFloat(distEl.value);
+  const duration = parseFloat(durEl.value);
+
+  if (!(distance > 0)) { showToast('Enter a distance greater than 0'); distEl.focus(); return; }
+  if (!(duration > 0)) { showToast('Enter a duration in minutes'); durEl.focus(); return; }
+
+  state.cardio = state.cardio || [];
+  state.cardio.push({
+    id: 'c' + Date.now(),
+    date: cardioDate,
+    type: cardioType,
+    distance: distance,
+    duration: duration,
+    notes: (notesEl.value || '').trim(),
+  });
+  saveData(state);
+
+  distEl.value = '';
+  durEl.value = '';
+  notesEl.value = '';
+  const cfg = CARDIO_TYPES[cardioType];
+  showToast(`Logged ${distance} ${cfg.unit} ${cfg.label.toLowerCase()}`);
+  render();
+}
+
+function deleteCardioSession(id) {
+  state.cardio = (state.cardio || []).filter(s => s.id !== id);
+  saveData(state);
+  render();
+}
+
+function bindCardioEvents() {
+  const view = $('#cardioView');
+  if (!view) return;
+
+  const dateInput = $('#cardioDate');
+  if (dateInput) dateInput.addEventListener('change', e => { cardioDate = e.target.value; renderCardio(); });
+  const prev = $('#cardioPrevDay');
+  if (prev) prev.addEventListener('click', () => { cardioDate = offsetDateStr(cardioDate, -1); renderCardio(); });
+  const next = $('#cardioNextDay');
+  if (next) next.addEventListener('click', () => { cardioDate = offsetDateStr(cardioDate, 1); renderCardio(); });
+  const today = $('#cardioToday');
+  if (today) today.addEventListener('click', () => { cardioDate = getTodayStr(); renderCardio(); });
+
+  const tabs = $('#cardioTypeTabs');
+  if (tabs) tabs.addEventListener('click', e => {
+    const btn = e.target.closest('[data-cardio-type]');
+    if (!btn) return;
+    cardioType = btn.dataset.cardioType;
+    renderCardio();
+  });
+
+  const save = $('#cardioSaveBtn');
+  if (save) save.addEventListener('click', addCardioSession);
+
+  const list = $('#cardioDayList');
+  if (list) list.addEventListener('click', e => {
+    const del = e.target.closest('[data-del-cardio]');
+    if (del) deleteCardioSession(del.dataset.delCardio);
+  });
+
+  const chip = $('#cardioWatchChip');
+  if (chip) chip.addEventListener('click', e => {
+    const fill = e.target.closest('[data-fill]');
+    if (!fill) return;
+    const distEl = $('#cardioDistance');
+    distEl.value = fill.dataset.fill;
+    distEl.focus();
+  });
+
+  // Race settings
+  const raceSel = $('#cardioRaceType');
+  const raceDate = $('#cardioRaceDate');
+  const weekly = $('#cardioWeeklyTarget');
+  if (raceSel) {
+    raceSel.innerHTML = Object.keys(RACE_DISTANCES)
+      .map(k => `<option value="${k}">${RACE_DISTANCES[k].label}</option>`).join('');
+  }
+  function syncRaceInputs() {
+    const g = cardioGoals();
+    if (raceSel) raceSel.value = g.raceKey;
+    if (raceDate) raceDate.value = g.raceDate;
+    if (weekly) weekly.value = g.weeklyMiles;
+  }
+  syncRaceInputs();
+  function saveRaceGoals() {
+    state.goals = state.goals || {};
+    if (raceSel) state.goals.raceKey = raceSel.value;
+    if (raceDate) state.goals.raceDate = raceDate.value;
+    if (weekly) state.goals.weeklyMiles = Number(weekly.value) || 15;
+    saveData(state);
+    renderCardio();
+  }
+  [raceSel, raceDate, weekly].forEach(el => { if (el) el.addEventListener('change', saveRaceGoals); });
+}

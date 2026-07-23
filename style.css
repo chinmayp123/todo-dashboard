@@ -5759,3 +5759,209 @@ body.profile-gated { overflow: hidden; }
 .profile-gate-error[hidden] { display: none; }
 
 .profile-gate #profileCreateBtn { width: 100%; }
+
+/* ========== Cardio ========== */
+.cardio-add-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.cardio-type-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.cardio-type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.cardio-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.cardio-type-btn.active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+.cardio-type-icon { font-size: 16px; line-height: 1; }
+
+.cardio-watch-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  margin-bottom: 14px;
+  background: var(--blue-bg);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+.cardio-watch-chip[hidden] { display: none; }
+.cardio-watch-chip strong { color: var(--text-primary); }
+.cardio-watch-fill {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--blue);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cardio-add-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.cardio-field-wide { grid-column: 1 / -1; }
+.cardio-field { display: flex; flex-direction: column; gap: 6px; }
+.cardio-field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cardio-field input,
+.cardio-field select {
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+.cardio-field input:focus,
+.cardio-field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.cardio-save-btn { width: 100%; min-height: 46px; }
+
+/* Sessions logged on the selected day */
+.cardio-day { margin-bottom: 18px; }
+.cardio-session {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+.cardio-session-icon { font-size: 20px; line-height: 1.2; }
+.cardio-session-main { flex: 1; min-width: 0; }
+.cardio-session-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cardio-session-top strong { font-size: 16px; color: var(--text-primary); }
+.cardio-session-dur { font-size: 13px; color: var(--text-secondary); }
+.cardio-session-pace {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.cardio-session-notes { margin-top: 5px; font-size: 12.5px; color: var(--text-muted); }
+.cardio-session-del {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.cardio-session-del:hover { color: var(--red); }
+.cardio-day-burn {
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding: 4px 4px 0;
+}
+
+.cardio-card { margin-bottom: 18px; }
+.cardio-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+
+/* Weekly volume */
+.cardio-week {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.cardio-week-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 10px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+}
+.cardio-week-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cardio-week-value { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--text-primary); }
+.cardio-week-sub { font-size: 11px; color: var(--text-muted); }
+.cardio-week-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cardio-week-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s; }
+
+/* Race card */
+.cardio-race-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.cardio-race-head h2 { margin-bottom: 0; }
+.cardio-race-dist { font-size: 12.5px; color: var(--text-muted); }
+.cardio-race-count-wrap { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.cardio-race-count { font-family: var(--font-display); font-size: 38px; font-weight: 700; color: var(--accent); line-height: 1; }
+.cardio-race-sub { font-size: 12.5px; color: var(--text-secondary); }
+.cardio-race-pred {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.cardio-race-time { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text-primary); }
+.cardio-race-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+/* Coach */
+.cardio-coach { display: flex; flex-direction: column; gap: 10px; }
+.cardio-rec { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+.cardio-rec-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.cardio-rec-good .cardio-rec-dot { background: var(--green); }
+.cardio-rec-warn .cardio-rec-dot { background: var(--yellow); }
+.cardio-rec-info .cardio-rec-dot { background: var(--blue); }
+
+@media (max-width: 720px) {
+  .cardio-week { grid-template-columns: repeat(3, 1fr); }
+  .cardio-race-form { grid-template-columns: 1fr; }
+  .cardio-type-btn { font-size: 13px; padding: 10px 6px; }
+}

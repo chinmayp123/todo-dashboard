@@ -13,6 +13,11 @@ Supported metrics and where they show up:
 | `external/exerciseMinutes/<date>` | Apple Exercise Time (Sum) | Exercise tile on the dashboard (default goal 30 min) |
 | `external/restingHR/<date>` | Resting Heart Rate (Average) | Resting HR row in the Weekly Report |
 | `external/sleep/<date>` | Sleep, Value is Asleep (Sum, in hr) | Sleep tile on the dashboard (goal 8h) + Weekly Report row. Keyed by wake-up date; values >24 are treated as minutes and normalized |
+| `external/runDistance/<date>` | Walking + Running Distance (Sum, in mi) | Cross-check chip in the Cardio view |
+| `external/cycleDistance/<date>` | Cycling Distance (Sum, in mi) | Cross-check chip in the Cardio view |
+| `external/swimDistance/<date>` | Swimming Distance (Sum, in yd) | Cross-check chip in the Cardio view |
+
+**The three distance metrics never create sessions by themselves.** They show up as a "⌚ Watch recorded 5.2 mi" chip with a *use this* button that pre-fills the distance box. That is deliberate: if the app auto-imported them, a run you logged by hand and the same run recorded by the watch would both count toward your weekly mileage. Note that Apple's `Walking + Running Distance` includes ordinary walking, so it will usually read higher than your actual run.
 
 Steps work from the iPhone alone. The other three need an Apple Watch (that's what measures active energy, exercise minutes, and resting HR). When `activeEnergy` exists for a date, the app trusts it outright and stops adding its own workout estimate + walking burn — the watch number already includes both.
 

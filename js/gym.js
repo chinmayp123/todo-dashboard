@@ -139,10 +139,15 @@ function latestBodyWeightLbs() {
 
 function estimateBurnForDate(dateStr) {
   const kg = latestBodyWeightLbs() * 0.4536;
-  return Math.round(state.gym.filter(e => e.date === dateStr).reduce((cal, ex) => {
+  const lifting = state.gym.filter(e => e.date === dateStr).reduce((cal, ex) => {
     const met = (ex.bodyweight || isBodyweightExercise(ex.exercise)) ? MET_BODYWEIGHT : MET_WEIGHTED;
     return cal + met * kg * (SET_MINUTES / 60) * ex.sets.length;
-  }, 0));
+  }, 0);
+  // Runs, rides and swims are real work — count them here so a training day
+  // without lifting still shows a burn. Only reached when the watch has not
+  // synced active energy, which would already include this.
+  const cardio = (typeof cardioBurnForDate === 'function') ? cardioBurnForDate(dateStr) : 0;
+  return Math.round(lifting + cardio);
 }
 
 // Prefer the Apple Watch's measured active calories when synced; fall back to

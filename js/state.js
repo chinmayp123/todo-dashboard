@@ -45,6 +45,7 @@ function loadData() {
     categories: safeParse('tf_categories', [...DEFAULT_CATEGORIES]),
     projects: safeParse('tf_projects', [...DEFAULT_PROJECTS]),
     gym: safeParse('tf_gym', []),
+    cardio: safeParse('tf_cardio', []),
     diet: safeParse('tf_diet', []),
     customFoods: safeParse('tf_custom_foods', {}),
     water: safeParse('tf_water', {}),
@@ -59,6 +60,7 @@ function saveData(data) {
   localStorage.setItem('tf_tasks', JSON.stringify(data.tasks));
   localStorage.setItem('tf_categories', JSON.stringify(data.categories));
   localStorage.setItem('tf_gym', JSON.stringify(data.gym));
+  localStorage.setItem('tf_cardio', JSON.stringify(data.cardio || []));
   localStorage.setItem('tf_diet', JSON.stringify(data.diet));
   localStorage.setItem('tf_custom_foods', JSON.stringify(data.customFoods));
   localStorage.setItem('tf_water', JSON.stringify(data.water));
@@ -84,6 +86,7 @@ function applyFirebaseData(data) {
   state.categories = data.categories || [];
   state.projects = data.projects || [];
   state.gym = data.gym || [];
+  state.cardio = data.cardio || [];
   state.diet = data.diet || [];
   state.customFoods = data.customFoods || {};
   state.water = data.water || {};
@@ -95,6 +98,7 @@ function applyFirebaseData(data) {
   localStorage.setItem('tf_tasks', JSON.stringify(state.tasks));
   localStorage.setItem('tf_categories', JSON.stringify(state.categories));
   localStorage.setItem('tf_gym', JSON.stringify(state.gym));
+  localStorage.setItem('tf_cardio', JSON.stringify(state.cardio));
   localStorage.setItem('tf_diet', JSON.stringify(state.diet));
   localStorage.setItem('tf_custom_foods', JSON.stringify(state.customFoods));
   localStorage.setItem('tf_water', JSON.stringify(state.water));
