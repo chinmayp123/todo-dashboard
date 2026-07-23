@@ -30,6 +30,13 @@
         </div>
         <span>Daylign</span>
       </div>
+      <button class="sidebar-profile" id="sidebarProfile" type="button" title="You're signed in here — tap to manage profiles">
+        <span class="sidebar-profile-avatar" id="sidebarProfileAvatar">D</span>
+        <span class="sidebar-profile-meta">
+          <span class="sidebar-profile-name" id="sidebarProfileName">—</span>
+          <span class="sidebar-profile-sub">Signed in</span>
+        </span>
+      </button>
       <nav class="nav">
         <button class="nav-btn active" data-view="dashboard">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -588,6 +595,13 @@
               <button class="btn-secondary" id="switchProfileBtn">Switch profile</button>
               <button class="btn-secondary settings-btn-danger" id="resetProfileBtn">Start fresh (erase this profile)</button>
             </div>
+          </section>
+
+          <section class="settings-card">
+            <h2>Your goals</h2>
+            <p class="settings-desc">Daily targets and your goal weight, in one place. These drive the rings, the coach and the weekly report.</p>
+            <div class="goals-summary" id="goalsSummary"></div>
+            <button class="btn-secondary" id="editGoalsSettingsBtn">Edit goals</button>
           </section>
 
           <section class="settings-card">

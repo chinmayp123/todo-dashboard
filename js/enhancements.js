@@ -88,7 +88,12 @@
     if (water) chips.push(`<span class="th-chip th-chip-blue">${water.main} water</span>`);
     if (cal) chips.push(`<span class="th-chip th-chip-accent">${cal.main}${cal.sub ? ' <em>' + cal.sub + '</em>' : ''} cal</span>`);
 
+    const hour = new Date().getHours();
+    const partOfDay = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const who = (typeof currentProfile === 'function' && currentProfile()) ? currentProfile().name : '';
+
     host.innerHTML = `
+      <div class="th-greeting">${partOfDay}${who ? ', ' + who : ''} <span class="th-wave">👋</span></div>
       <div class="today-hero">
         <div class="th-ring" style="background:conic-gradient(var(--accent) 0 ${pct}%, var(--border) ${pct}% 100%)">
           <div class="th-ring-inner">

@@ -1742,7 +1742,10 @@ function bindGoalsEvents() {
       return v > 0 ? v : fallback;
     };
     const prev = getGoals();
+    // Spread prev so cardio race targets (raceKey/raceDate/weeklyMiles) and the
+    // _onboarded marker survive — rebuilding the object from scratch dropped them.
     state.goals = {
+      ...prev,
       calories: read('#goalCalories', prev.calories),
       protein: read('#goalProtein', prev.protein),
       carbs: read('#goalCarbs', prev.carbs),

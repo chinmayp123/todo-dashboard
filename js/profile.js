@@ -94,11 +94,14 @@ function showProfileGate(onReady) {
   // any returning profile skip this — the owner migrates, a returning profile
   // pulls their real cloud data.
   function choose(profile, isNew) {
-    if (isNew && typeof resetLocalStateToStarter === 'function') resetLocalStateToStarter();
+    // Save first so activeProfile is set before any render — the greeting and
+    // sidebar indicator both read currentProfile(), and resetLocalStateToStarter
+    // triggers a render.
     saveProfile(profile);
+    updateProfileSettingsCard();
+    if (isNew && typeof resetLocalStateToStarter === 'function') resetLocalStateToStarter();
     gate.hidden = true;
     document.body.classList.remove('profile-gated');
-    updateProfileSettingsCard();
     onReady(profile);
   }
 
@@ -128,10 +131,15 @@ function showProfileGate(onReady) {
   }
 }
 
-// Reflect the active profile in Settings.
+// Reflect the active profile in Settings and the sidebar indicator.
 function updateProfileSettingsCard() {
+  const name = activeProfile ? activeProfile.name : '—';
   const el = document.getElementById('profileCurrentName');
-  if (el) el.textContent = activeProfile ? activeProfile.name : '—';
+  if (el) el.textContent = name;
+  const sideName = document.getElementById('sidebarProfileName');
+  if (sideName) sideName.textContent = name;
+  const avatar = document.getElementById('sidebarProfileAvatar');
+  if (avatar) avatar.textContent = (activeProfile && activeProfile.name ? activeProfile.name : '?').charAt(0).toUpperCase();
 }
 
 // ---------- Usage report ----------

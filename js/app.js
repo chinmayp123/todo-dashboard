@@ -156,6 +156,11 @@ function bindEvents() {
   // Profile
   const switchProfileBtn = $('#switchProfileBtn');
   if (switchProfileBtn) switchProfileBtn.addEventListener('click', switchProfile);
+  const sidebarProfile = $('#sidebarProfile');
+  if (sidebarProfile) sidebarProfile.addEventListener('click', () => switchView('settings'));
+  const editGoalsSettingsBtn = $('#editGoalsSettingsBtn');
+  if (editGoalsSettingsBtn && typeof openGoalsModal === 'function') editGoalsSettingsBtn.addEventListener('click', openGoalsModal);
+
   renderModuleToggles();
   const usageBtn = $('#usageLoadBtn');
   if (usageBtn) usageBtn.addEventListener('click', loadUsageReport);
@@ -196,6 +201,26 @@ function headerPrimaryAction() {
   } else {
     openModal();
   }
+}
+
+function renderGoalsSummary() {
+  const wrap = $('#goalsSummary');
+  if (!wrap || typeof getGoals !== 'function') return;
+  const g = getGoals();
+  const rows = [
+    { label: 'Goal weight', val: g.weight + ' lbs' },
+    { label: 'Daily calories', val: g.calories + ' cal' },
+    { label: 'Protein', val: g.protein + ' g' },
+    { label: 'Carbs', val: g.carbs + ' g' },
+    { label: 'Fat', val: g.fat + ' g' },
+    { label: 'Water', val: g.water + ' oz' },
+    { label: 'Exercise burn', val: g.burn + ' cal/day' },
+  ];
+  wrap.innerHTML = rows.map(r => `
+    <div class="goals-summary-row">
+      <span class="goals-summary-label">${r.label}</span>
+      <span class="goals-summary-val">${r.val}</span>
+    </div>`).join('');
 }
 
 function renderModuleToggles() {
@@ -255,6 +280,10 @@ function switchView(view) {
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) sidebar.classList.toggle('hide-taskmeta', TASKMETA_VIEWS.indexOf(view) === -1);
 
+  // The header search only searches tasks — hide it where it does nothing.
+  const searchBox = document.querySelector('.header .search-box');
+  if (searchBox) searchBox.hidden = TASKMETA_VIEWS.indexOf(view) === -1;
+
   render();
 }
 
@@ -279,6 +308,7 @@ function applyModuleNav() {
 // ========== Render ==========
 function render() {
   applyModuleNav();
+  if (typeof renderGoalsSummary === 'function') renderGoalsSummary();
   renderSidebarCategories();
   renderSidebarProjects();
   renderDashboard();

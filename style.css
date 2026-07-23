@@ -6066,3 +6066,68 @@ body.profile-gated { overflow: hidden; }
 .module-toggle-input:focus-visible ~ .module-toggle-switch {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
+
+/* ========== Sidebar profile indicator ========== */
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  margin: 4px 0 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, border-color .15s;
+}
+.sidebar-profile:hover { background: var(--bg-hover); border-color: var(--accent); }
+.sidebar-profile-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-profile-meta { display: flex; flex-direction: column; min-width: 0; }
+.sidebar-profile-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-profile-sub { font-size: 11px; color: var(--text-muted); }
+
+/* ========== Dashboard greeting ========== */
+.th-greeting {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+.th-wave { display: inline-block; }
+
+/* ========== Goals summary (Settings) ========== */
+.goals-summary { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 16px; }
+.goals-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+}
+.goals-summary-row:last-child { border-bottom: none; }
+.goals-summary-label { color: var(--text-secondary); }
+.goals-summary-val { color: var(--text-primary); font-weight: 600; }
