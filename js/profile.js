@@ -87,32 +87,56 @@ function showProfileGate(onReady) {
 
   const err = document.getElementById('profileGateError');
   const nameInput = document.getElementById('profileNewName');
+  const list = document.getElementById('profileList');
 
-  // isNew: created via the "start fresh" path, so this device's state is still
-  // the demo seed from loadData(). Wipe it to a clean slate BEFORE sync starts,
-  // or the empty cloud node gets the sample tasks pushed into it. The owner and
-  // any returning profile skip this — the owner migrates, a returning profile
-  // pulls their real cloud data.
-  function choose(profile, isNew) {
+  // Every pick wipes this device's local seed (loadData()'s demo tasks) to a
+  // clean slate before sync starts. For a new profile that means the empty
+  // cloud node gets a clean push, not sample junk; for an existing profile
+  // (owner or a returning person) the reset is immediately overwritten when
+  // their newer cloud data loads. onboard is set only for a genuinely new name.
+  function choose(profile, onboard) {
     // Save first so activeProfile is set before any render — the greeting and
     // sidebar indicator both read currentProfile(), and resetLocalStateToStarter
     // triggers a render.
     saveProfile(profile);
     updateProfileSettingsCard();
-    // A freshly created profile is a candidate for onboarding; the sync layer
-    // makes the final call once it knows whether the cloud already has data.
-    if (isNew) window.__pendingOnboarding = true;
-    if (isNew && typeof resetLocalStateToStarter === 'function') resetLocalStateToStarter();
+    if (onboard) window.__pendingOnboarding = true;
+    if (typeof resetLocalStateToStarter === 'function') resetLocalStateToStarter();
     gate.hidden = true;
     document.body.classList.remove('profile-gated');
     onReady(profile);
   }
 
-  const ownerBtn = document.getElementById('profileOwnerBtn');
-  if (ownerBtn) {
-    ownerBtn.textContent = OWNER_PROFILE.name;
-    ownerBtn.addEventListener('click', () => choose(OWNER_PROFILE));
+  // Render one tappable profile button.
+  function addProfileButton(profile) {
+    if (!list) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'profile-pick';
+    btn.innerHTML = `<span class="profile-pick-avatar">${esc((profile.name || '?').charAt(0).toUpperCase())}</span>` +
+      `<span class="profile-pick-name">${esc(profile.name)}</span>`;
+    btn.addEventListener('click', () => choose(profile, false));
+    list.appendChild(btn);
   }
+
+  // The owner is always available even if the registry can't be read (offline).
+  if (list) list.innerHTML = '';
+  addProfileButton(OWNER_PROFILE);
+
+  // Pull every other known profile from the registry so people can sign back in
+  // with a tap instead of retyping their name. Best-effort — offline just shows
+  // the owner plus the create box.
+  const seen = { [OWNER_PROFILE.id]: true };
+  try {
+    db.ref('profiles').once('value').then(snap => {
+      const reg = snap.val() || {};
+      Object.keys(reg).forEach(id => {
+        if (seen[id]) return;
+        seen[id] = true;
+        addProfileButton({ id: id, name: reg[id], legacy: false });
+      });
+    }).catch(() => {});
+  } catch (e) { /* firebase unavailable — owner + create still work */ }
 
   const createBtn = document.getElementById('profileCreateBtn');
   function createFromInput() {
@@ -122,10 +146,10 @@ function showProfileGate(onReady) {
       if (err) { err.textContent = 'Enter a name with at least one letter or number.'; err.hidden = false; }
       return;
     }
-    if (id === OWNER_PROFILE.id) {
-      if (err) { err.textContent = 'That name is taken — use the button above instead.'; err.hidden = false; }
-      return;
-    }
+    // Typing an existing name signs into that account rather than creating a
+    // duplicate (and does not re-run onboarding).
+    if (id === OWNER_PROFILE.id) { choose(OWNER_PROFILE, false); return; }
+    if (seen[id]) { choose({ id: id, name: name, legacy: false }, false); return; }
     choose({ id: id, name: name, legacy: false }, true);
   }
   if (createBtn) createBtn.addEventListener('click', createFromInput);

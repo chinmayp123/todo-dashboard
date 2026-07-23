@@ -6291,3 +6291,39 @@ body.onboard-open { overflow: hidden; }
 }
 .tax-add input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 .tax-add .btn-secondary { flex-shrink: 0; }
+
+/* ========== Profile picker buttons (sign-in gate) ========== */
+.profile-gate-list { display: flex; flex-direction: column; gap: 8px; }
+.profile-pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, border-color .15s;
+}
+.profile-pick:hover { background: var(--accent-glow); border-color: var(--accent); }
+.profile-pick-avatar {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.profile-pick-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
