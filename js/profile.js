@@ -99,6 +99,9 @@ function showProfileGate(onReady) {
     // triggers a render.
     saveProfile(profile);
     updateProfileSettingsCard();
+    // A freshly created profile is a candidate for onboarding; the sync layer
+    // makes the final call once it knows whether the cloud already has data.
+    if (isNew) window.__pendingOnboarding = true;
     if (isNew && typeof resetLocalStateToStarter === 'function') resetLocalStateToStarter();
     gate.hidden = true;
     document.body.classList.remove('profile-gated');

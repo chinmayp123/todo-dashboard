@@ -193,6 +193,10 @@ function startFirebaseSync(onDataReceived) {
       }
       appReconciled = true;
       setSyncStatus('synced');
+      // Now that cloud state (if any) has loaded, decide whether a freshly
+      // created profile still needs onboarding. Runs after sync so a returning
+      // person whose cloud data carries _onboarded is never re-onboarded.
+      if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
     })
     .catch(err => {
       console.warn('Firebase initial load failed, using localStorage:', err);
@@ -203,6 +207,9 @@ function startFirebaseSync(onDataReceived) {
       firebaseReady = false;
       appReconciled = true;
       setSyncStatus('error', 'Could not reach the cloud: ' + (err && err.message ? err.message : 'unknown error') + '. Changes save on this device only — reopen when online to sync.');
+      // Offline first-run still deserves onboarding — it saves locally and
+      // syncs when the connection returns.
+      if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
     });
 
   // Listen for real-time changes from other devices

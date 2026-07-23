@@ -108,6 +108,7 @@ To test on a phone, open `http://<your-computer-lan-ip>:8080` on the same Wi-Fi.
 - App data (tasks, workouts, meals, weigh-ins, water, goals) syncs to **Firebase Realtime Database** and is cached in `localStorage` for offline use.
 - **Profiles:** each person's data lives at `users/<profile-id>`, picked once per device on first launch and stored in `localStorage['daylign_profile']`. Nothing is read from or written to the cloud until a profile is chosen. This gives people **separation, not security** — the database has no auth rules, so it stops accidental clobbering between people who trust each other, and is not a permission system. Switch or reset from Settings → *Who's using this device*.
 - The original pre-profiles node `lifestack` is **never written again** and is kept as a frozen backup.
+- **Onboarding:** a newly created profile runs a short first-run flow (welcome → pick modules → set core goals) before landing on the dashboard. It's triggered by the sync layer once cloud state settles and gated on a synced `goals._onboarded` marker, so a returning person on a new device is never walked through it again. Skippable; everything it sets lives in Settings (`js/onboarding.js`).
 - **Modules:** Gym, Cardio and Diet are optional and toggle on/off per-profile in Settings (`state.modules`, synced). Off hides them from every nav surface and drops their dashboard cards; the data is never deleted and returns when re-enabled. Tasks, Board, Calendar and Dashboard are core. The Categories/Projects sidebar sections only appear on those task-oriented views (`TASKMETA_VIEWS`).
 - Settings → *How the app is being used* is a **read-only** engagement report (last sync, active days, what each person logs). It reads the `users` tree directly and never loads another profile into the running app — doing that would be a write hazard, since `renderDiet()` calls `saveData()` during an ordinary render.
 - Apple Health/Watch data lives in a **separate `external` Firebase node** the app only reads — app writes can never overwrite it. Per person: `external/*` for the original profile, `external/u/<profile-id>/*` for everyone else.
@@ -127,6 +128,7 @@ js/
   app.js              — Entry point, navigation (switchView), event binding
   firebase-sync.js    — Firebase sync + external (Apple Health) reads
   profile.js          — Per-person profiles: first-launch gate, node paths, switching
+  onboarding.js       — First-run flow for new profiles (modules + core goals)
   dashboard.js        — Health strip, Weekly Report, weight trend, reminders, schedule
   tasks.js            — List view
   board.js            — Kanban board
