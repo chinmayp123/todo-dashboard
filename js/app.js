@@ -156,6 +156,8 @@ function bindEvents() {
   // Profile
   const switchProfileBtn = $('#switchProfileBtn');
   if (switchProfileBtn) switchProfileBtn.addEventListener('click', switchProfile);
+  const usageBtn = $('#usageLoadBtn');
+  if (usageBtn) usageBtn.addEventListener('click', loadUsageReport);
 
   // Backup / Restore
   $('#exportBtn').addEventListener('click', () => exportBackup());

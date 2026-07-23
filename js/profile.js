@@ -128,6 +128,107 @@ function updateProfileSettingsCard() {
   if (el) el.textContent = activeProfile ? activeProfile.name : '—';
 }
 
+// ---------- Usage report ----------
+// Read-only view of how each profile is actually using the app. Deliberately
+// NOT a stats comparison — it answers "is he logging meals, is he opening it"
+// so the app can be improved, not "who is fitter".
+//
+// Nothing here touches `state` or calls saveData/saveToFirebase. It reads the
+// users tree once, on demand, and renders. Loading someone else's data into
+// the live app instead would be a write hazard: renderDiet() alone calls
+// saveData() during a normal render.
+
+function relativeTime(ms) {
+  if (!ms) return 'never';
+  const mins = Math.round((Date.now() - ms) / 60000);
+  if (mins < 2) return 'just now';
+  if (mins < 60) return mins + ' min ago';
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return hrs + ' hour' + (hrs === 1 ? '' : 's') + ' ago';
+  const days = Math.round(hrs / 24);
+  if (days < 30) return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+  return Math.round(days / 30) + ' month(s) ago';
+}
+
+function summarizeUsage(id, data) {
+  const tasks = data.tasks || [];
+  const gym = data.gym || [];
+  const cardio = data.cardio || [];
+  const diet = data.diet || [];
+  const weight = data.weight || {};
+  const water = data.water || {};
+
+  // "Active" means they logged something that day, in any module.
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 13);
+  const cutoffStr = toLocalDateStr(cutoff);
+  const activeDays = new Set();
+  const collect = (dates) => dates.forEach(d => { if (d && d >= cutoffStr) activeDays.add(d); });
+  collect(diet.map(e => e.date));
+  collect(gym.map(e => e.date));
+  collect(cardio.map(e => e.date));
+  collect(Object.keys(weight));
+  collect(Object.keys(water));
+
+  return {
+    id: id,
+    lastUpdated: data.lastUpdated || 0,
+    activeDays: activeDays.size,
+    features: [
+      { label: 'Tasks', count: tasks.length, detail: tasks.filter(t => t.status === 'done').length + ' done' },
+      { label: 'Meals', count: diet.length, detail: new Set(diet.map(e => e.date)).size + ' days' },
+      { label: 'Workouts', count: gym.length, detail: new Set(gym.map(e => e.date)).size + ' days' },
+      { label: 'Cardio', count: cardio.length, detail: new Set(cardio.map(e => e.date)).size + ' days' },
+      { label: 'Weigh-ins', count: Object.keys(weight).length, detail: '' },
+      { label: 'Water', count: Object.keys(water).length, detail: 'days' },
+    ],
+  };
+}
+
+function loadUsageReport() {
+  const out = document.getElementById('usageReport');
+  if (!out) return;
+  out.innerHTML = '<p class="settings-desc">Loading…</p>';
+  db.ref('users').once('value')
+    .then(snap => {
+      const all = snap.val() || {};
+      const names = {};
+      return db.ref('profiles').once('value')
+        .then(p => { Object.assign(names, p.val() || {}); })
+        .catch(() => {})
+        .then(() => renderUsageReport(all, names, out));
+    })
+    .catch(err => {
+      out.innerHTML = '<p class="settings-desc">Could not load usage: ' + esc(err && err.message ? err.message : 'unknown error') + '</p>';
+    });
+}
+
+function renderUsageReport(all, names, out) {
+  const ids = Object.keys(all);
+  if (!ids.length) { out.innerHTML = '<p class="settings-desc">No profiles have synced yet.</p>'; return; }
+  out.innerHTML = ids.map(id => {
+    const u = summarizeUsage(id, all[id] || {});
+    const name = names[id] || id;
+    const isMe = activeProfile && activeProfile.id === id;
+    return `
+      <div class="usage-card">
+        <div class="usage-head">
+          <strong>${esc(name)}${isMe ? ' <span class="usage-you">you</span>' : ''}</strong>
+          <span class="usage-last">Last synced ${esc(relativeTime(u.lastUpdated))}</span>
+        </div>
+        <div class="usage-active">${u.activeDays}<span>/14 days active</span></div>
+        <div class="usage-grid">
+          ${u.features.map(f => `
+            <div class="usage-stat${f.count === 0 ? ' usage-stat-zero' : ''}">
+              <span class="usage-stat-num">${f.count}</span>
+              <span class="usage-stat-label">${f.label}</span>
+              ${f.detail ? `<span class="usage-stat-detail">${esc(f.detail)}</span>` : ''}
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
 // Switching wipes this device's cached tf_* data first. Without that, the
 // previous person's tasks and meals are still in localStorage when the next
 // person's node loads, and the newer-timestamp reconciliation could push one
