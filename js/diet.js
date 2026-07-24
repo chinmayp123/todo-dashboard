@@ -1281,51 +1281,65 @@ function getGoals() {
   return { ...DEFAULT_GOALS, ...(state.goals || {}) };
 }
 
+// Redesigned per design_handoff_daylign_v2 §4: a big calorie ring plus three
+// macro mini-rings that spell out eaten / goal in grams with a "left" chip —
+// the explicit user correction was that a percent alone isn't enough.
+// Daylign's burn-aware net line is preserved as a caption under the ring.
 function renderDietGoals(totals) {
   const goals = getGoals();
-  const items = [
-    { key: 'calories', label: 'Calories', unit: '', current: Math.round(totals.calories), goal: goals.calories, color: 'var(--accent)' },
-    { key: 'protein', label: 'Protein', unit: 'g', current: Math.round(totals.protein), goal: goals.protein, color: '#6366f1' },
-    { key: 'carbs', label: 'Carbs', unit: 'g', current: Math.round(totals.carbs), goal: goals.carbs, color: '#eab308' },
-    { key: 'fat', label: 'Fat', unit: 'g', current: Math.round(totals.fat), goal: goals.fat, color: '#ef4444' },
+  const cal = Math.round(totals.calories);
+  const calPct = Math.min(100, Math.round((cal / goals.calories) * 100));
+  const calLeft = goals.calories - cal;
+
+  const burnInfo = (typeof burnForDate === 'function') ? burnForDate(dietViewDate)
+    : (typeof estimateBurnForDate === 'function') ? { cal: estimateBurnForDate(dietViewDate), watch: false }
+    : { cal: 0, watch: false };
+  const burn = Number.isFinite(burnInfo.cal) ? Math.max(0, Math.round(burnInfo.cal)) : 0;
+  const src = burnInfo.watch ? 'activity' : 'training';
+  let netLine;
+  if (calLeft >= 0) {
+    netLine = burn > 0 ? `${calLeft} left · +${burn} from ${src} → ${calLeft + burn} net` : `${calLeft} left`;
+  } else {
+    const overBy = -calLeft;
+    netLine = burn > 0
+      ? (overBy - burn <= 0 ? `Over by ${overBy} — ${src} covered it, net under` : `Over by ${overBy} · net ${overBy - burn} over after ${src}`)
+      : `Over by ${overBy}`;
+  }
+
+  // README run/domain palette: protein green, carbs blue, fat amber.
+  const macros = [
+    { label: 'Protein', current: Math.round(totals.protein), goal: goals.protein, color: '#34d399' },
+    { label: 'Carbs', current: Math.round(totals.carbs), goal: goals.carbs, color: '#5aa5f9' },
+    { label: 'Fat', current: Math.round(totals.fat), goal: goals.fat, color: '#fbbf24' },
   ];
 
-  $('#dietGoals').innerHTML = items.map(item => {
-    const pct = Math.min(100, Math.round((item.current / item.goal) * 100));
-    const remaining = Math.max(0, item.goal - item.current);
-    const over = item.current > item.goal;
-    const burnInfo = item.key === 'calories' && typeof burnForDate === 'function' ? burnForDate(dietViewDate)
-      : item.key === 'calories' && typeof estimateBurnForDate === 'function' ? { cal: estimateBurnForDate(dietViewDate), watch: false }
-      : { cal: 0, watch: false };
-    const burn = Number.isFinite(burnInfo.cal) ? Math.max(0, Math.round(burnInfo.cal)) : 0;
-    const src = burnInfo.watch ? 'activity (watch)' : 'training';
-    const overBy = item.current - item.goal;
-    let remainingLine;
-    if (burn > 0 && !over) {
-      remainingLine = `${remaining} remaining · +${burn} earned from ${src} → ${remaining + burn} net`;
-    } else if (burn > 0 && over) {
-      remainingLine = overBy - burn <= 0
-        ? `Over by ${overBy} on paper — ${src} burned ${burnInfo.watch ? '' : '~'}${burn}, so you're net under`
-        : `Over by ${overBy} · ${src} claws back ${burnInfo.watch ? '' : '~'}${burn} → net ${overBy - burn} over`;
-    } else {
-      remainingLine = over ? `Over by ${overBy}${item.unit}` : `${remaining}${item.unit} remaining`;
-    }
+  const macroHTML = macros.map(m => {
+    const pct = Math.min(100, Math.round((m.current / m.goal) * 100));
+    const left = m.goal - m.current;
+    const leftTxt = left >= 0 ? `${left}g left` : `${-left}g over`;
     return `
-      <div class="diet-goal-row">
-        <div class="diet-goal-header">
-          <span class="diet-goal-label">${item.label}</span>
-          <span class="diet-goal-nums">
-            <span class="diet-goal-current" style="color:${item.color}">${item.current}${item.unit}</span>
-            <span class="diet-goal-sep">/</span>
-            <span class="diet-goal-target">${item.goal}${item.unit}</span>
-          </span>
+      <div class="dg-macro">
+        <div class="dg-macro-ring" style="background:conic-gradient(${m.color} 0 ${pct}%, var(--border) ${pct}% 100%)">
+          <div class="dg-macro-hole"><span class="tnum" style="color:${m.color}">${pct}%</span></div>
         </div>
-        <div class="diet-goal-bar-track">
-          <div class="diet-goal-bar-fill ${over ? 'over' : ''}" style="width:${pct}%;background:${item.color}"></div>
-        </div>
-        <div class="diet-goal-remaining">${remainingLine}</div>
+        <div class="dg-macro-val tnum">${m.current}<span class="dg-macro-goal"> / ${m.goal}g</span></div>
+        <div class="dg-macro-label">${m.label}</div>
+        <div class="dg-macro-left tnum" style="color:${m.color}">${leftTxt}</div>
       </div>`;
   }).join('');
+
+  $('#dietGoals').innerHTML = `
+    <div class="dg-cal-wrap">
+      <div class="dg-cal-ring" style="background:conic-gradient(var(--accent) 0 ${calPct}%, var(--border) ${calPct}% 100%)">
+        <div class="dg-cal-hole">
+          <span class="dg-cal-num tnum">${cal}</span>
+          <span class="dg-cal-of">of ${goals.calories} cal</span>
+          <span class="dg-cal-left tnum ${calLeft < 0 ? 'over' : ''}">${calLeft >= 0 ? calLeft + ' left' : -calLeft + ' over'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="dg-net">${netLine}</div>
+    <div class="dg-macros">${macroHTML}</div>`;
 }
 
 // ========== Food Recommendations ==========
