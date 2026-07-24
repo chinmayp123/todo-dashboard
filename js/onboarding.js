@@ -26,7 +26,12 @@ function onboardSteps() {
   // The goals step is pointless if the person tracks neither fitness nor food,
   // so it drops out when both Gym and Diet are off.
   const wantsGoals = obDraft.modules.gym !== false || obDraft.modules.diet !== false;
-  return ['welcome', 'modules'].concat(wantsGoals ? ['goals'] : []).concat(['done']);
+  // Apple Watch sync only matters to the fitness modules.
+  const wantsWatch = obDraft.modules.gym !== false || obDraft.modules.cardio !== false;
+  return ['welcome', 'modules']
+    .concat(wantsGoals ? ['goals'] : [])
+    .concat(wantsWatch ? ['watch'] : [])
+    .concat(['done']);
 }
 
 function startOnboarding() {
@@ -119,6 +124,16 @@ function renderOnboardStep() {
           <input type="number" id="obProtein" inputmode="numeric" min="20" max="400" step="5" value="${g.protein}">
         </label>` : ''}
       </div>`;
+  } else if (step === 'watch') {
+    const shortcuts = (typeof HEALTH_SHORTCUTS !== 'undefined') ? HEALTH_SHORTCUTS : [];
+    body = `
+      <div class="ob-mark">⌚</div>
+      <h1>Connect your Apple Watch</h1>
+      <p class="ob-lead">Optional — auto-sync steps, active energy, exercise minutes, run distance and resting heart rate from Apple Health. iPhone + Apple Watch only.</p>
+      <div class="ob-watch-btns">
+        ${shortcuts.map(s => `<a class="btn-secondary ob-watch-add" href="${esc(s.url)}" target="_blank" rel="noopener">＋ Add “${esc(s.label)}”</a>`).join('')}
+      </div>
+      <p class="ob-watch-note">Add it, run it once, and allow Health access. You can always set this up later — full steps live in <strong>Settings → Connect Apple Watch</strong>.</p>`;
   } else if (step === 'done') {
     const on = TOGGLEABLE_MODULES.filter(m => obDraft.modules[m.key] !== false).map(m => m.label);
     body = `

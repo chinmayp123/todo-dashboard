@@ -209,11 +209,11 @@ function headerPrimaryAction() {
   }
 }
 
-// Pre-built iCloud shortcuts, one per Apple Health metric. Add more here as
-// they're published — each renders its own "Add" button in Settings.
+// Pre-built iCloud shortcut(s). The combined "Sync Health to Daylign" pulls
+// steps, active energy, exercise minutes, run distance and resting HR in one
+// run. Add more entries here to render more "Add" buttons.
 const HEALTH_SHORTCUTS = [
-  { label: 'Steps', url: 'https://www.icloud.com/shortcuts/b4c12d9d299a4a849b2d10e978cfa8e1' },
-  { label: 'Sleep', url: 'https://www.icloud.com/shortcuts/896af7c980d44e24b0188225a98c7ab0' },
+  { label: 'Sync Health to Daylign', url: 'https://www.icloud.com/shortcuts/35bece5937964531903187bb76279012' },
 ];
 
 // Metric names the app understands, so the "last synced" scan ignores the
