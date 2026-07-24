@@ -52,8 +52,28 @@ function getExternalSwimDistance(dateStr) { return getExternalMetric('swimDistan
 function getExternalWorkouts(dateStr) {
   const w = externalData && externalData.workouts ? externalData.workouts[dateStr] : null;
   if (!w) return [];
-  const arr = Array.isArray(w) ? w : Object.values(w);
-  return arr.filter(x => x && typeof x === 'object');
+  // Accept three shapes so the Shortcut can stay simple: a real array, a
+  // numeric-keyed object (how Firebase sometimes returns arrays), or a SINGLE
+  // workout object — the last one lets a shortcut post one workout without
+  // building a Repeat loop, which covers most days.
+  let arr;
+  if (Array.isArray(w)) arr = w;
+  else if (w.type || w.minutes || w.duration) arr = [w];
+  else arr = Object.values(w);
+  return arr.filter(x => x && typeof x === 'object' && (x.type || x.minutes || x.duration)).map(normalizeWorkout);
+}
+
+// Shortcuts reports a workout's duration in seconds; the UI wants minutes.
+// Anything over 600 is far too long to be minutes, so treat it as seconds.
+function normalizeWorkout(w) {
+  let minutes = Number(w.minutes || w.duration) || 0;
+  if (minutes > 600) minutes = minutes / 60;
+  return {
+    type: w.type || 'Workout',
+    minutes: Math.round(minutes),
+    distance: Number(w.distance) || 0,
+    cal: Number(w.cal || w.calories) || 0,
+  };
 }
 
 // Sleep arrives in whichever unit the Shortcut summed it in. Apple's sleep
