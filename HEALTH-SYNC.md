@@ -10,40 +10,58 @@ Pre-built shortcuts:
 
 ---
 
-## One combined shortcut (recommended)
+## Building the shortcut (the pattern that actually works)
 
-Instead of one shortcut per metric, build a single **"Sync Health to Daylign"** that reads everything and uploads it in **one network request** using a Firebase multi-path update. Then you have one shortcut and one nightly automation.
+> This section was rewritten after building it for real on an iPhone. An earlier
+> version described a single Dictionary + multi-path `PATCH`; that is *not* what
+> was built or verified. What follows is the proven pattern.
 
-**Actions, top to bottom:**
+Each metric is an independent **3-action block**. Repeat the block per metric.
 
-1. **Date** → add **Format Date**: Date = *Current Date*, Format = Custom → `yyyy-MM-dd`. (This becomes the `Formatted Date` variable everything reuses.)
-2. **Find Health Samples** — Steps, Sort by Start Date, Limit 1 is *not* enough; instead add **Calculate Statistics → Sum** over “is in the last 1 day”. Name the result **Steps**.
-3. Repeat step 2 for each metric, each ending in a Sum/Average you name:
-   - **Active Energy** (Sum) → `Energy`
-   - **Apple Exercise Time** (Sum) → `Exercise`
-   - **Resting Heart Rate** (Average) → `RestingHR`
-   - **Sleep**, filter *Value is Asleep* (Sum, in **hr**) → `Sleep`
-4. Add a **Dictionary** action with one row per metric — the **key includes the date**:
-   | Key | Value |
-   |---|---|
-   | `steps/[Formatted Date]` | `Steps` |
-   | `activeEnergy/[Formatted Date]` | `Energy` |
-   | `exerciseMinutes/[Formatted Date]` | `Exercise` |
-   | `restingHR/[Formatted Date]` | `RestingHR` |
-   | `sleep/[Formatted Date]` | `Sleep` |
+**Once, at the top of the shortcut:**
 
-   *Optional — feed the Cardio "⌚ Watch recorded" chip by adding Find Health Samples for these too:*
-   | Key | Value | Health sample |
-   |---|---|---|
-   | `runDistance/[Formatted Date]` | `RunDist` | Walking + Running Distance (Sum, mi) |
-   | `cycleDistance/[Formatted Date]` | `RideDist` | Cycling Distance (Sum, mi) |
-   | `swimDistance/[Formatted Date]` | `SwimDist` | Swimming Distance (Sum, yd) |
-5. **Get Contents of URL**:
-   - URL: `https://lifestack-d5300-default-rtdb.firebaseio.com/external.json` — *(everyone except the original profile uses `.../external/u/<your-id>.json`)*
-   - Method: **PATCH**
-   - Request Body: **JSON** → the **Dictionary** from step 4
+**Format Date** → Date = *Current Date*, Date Format = **Custom** → `yyyy-MM-dd`.
+This produces the `Formatted Date` variable every block reuses.
 
-Firebase treats each slash-key (`steps/2026-07-23`) as a deep path, so that one PATCH writes all five values at once. Done — one shortcut, one upload.
+**Then, per metric:**
+
+1. **Find Health Samples** — set *Type*, and a date filter (**Start Date is today**, or **is in the last 1 day** for sleep).
+2. **Calculate Statistics** — **Sum** for most, **Average** for Resting Heart Rate.
+3. **Get Contents of URL**
+   - URL: `https://lifestack-d5300-default-rtdb.firebaseio.com/external/<metric>/` + **Formatted Date** + `.json`
+   - Method: **PUT**
+   - Request Body: **File**  ← *not* JSON; the body is a single bare number
+   - File: the **Sum** (or **Average**) from step 2
+
+| Metric | Health sample type | Stat | URL word |
+|---|---|---|---|
+| Steps | Steps | Sum | `steps` |
+| Active energy | Active Energy | Sum | `activeEnergy` |
+| Exercise | Apple Exercise Time | Sum | `exerciseMinutes` |
+| Resting HR | Resting Heart Rate | **Average** | `restingHR` |
+| Sleep | Sleep — *see below* | Sum | `sleep` |
+| Run distance | Walking + Running Distance | Sum | `runDistance` |
+| Cycle distance | Cycling Distance | Sum | `cycleDistance` |
+| Swim distance | Swimming Distance | Sum | `swimDistance` |
+
+URL words are **case-sensitive** — `restingHr` will not be read; it must be `restingHR`.
+
+### Sleep needs one extra action
+
+Apple's sleep samples are **categories** ("Asleep", "InBed", "Core", "Deep", "REM"), not numbers. Summing them fails with *"Calculate Statistics failed because Shortcuts couldn't convert from Text to Number."* You must sum their **durations** instead:
+
+**Find Health Samples** (Sleep, *Start Date is in the last 1 day*, *Value is Asleep*) → **Get Details of Health Sample → Duration** → **Calculate Statistics → Sum of `Duration`** → upload.
+
+Two gotchas: point the Sum at the **Duration** output (not "Health Samples"), and use *in the last 1 day* — last night's sleep **starts yesterday evening**, so "is today" finds nothing. The app accepts the total in seconds, minutes or hours.
+
+### A metric with no data stops the whole shortcut
+
+If a Find returns nothing (0 exercise minutes, no resting-HR sample yet), its upload sends an empty body, errors, and **every action below it is skipped**. Symptoms: the first metrics sync fine and the rest silently never appear.
+
+Practical ways to live with it:
+- Put the always-present metrics (**steps**, **active energy**) **first**.
+- Put flaky ones (exercise, resting HR) **last**, or keep them in a **separate shortcut**.
+- To find the culprit, run it and scroll from the top — the **first red error** is what halted the run.
 
 **Automate it:** Shortcuts app → Automation → *Time of Day* → nightly (e.g. 11:55 PM) → run this shortcut → turn off "Ask Before Running".
 
@@ -59,18 +77,27 @@ Post them to `workouts/<date>` as a list of `{ type, minutes, distance, cal }`:
 - `distance` — miles for run/ride, yards for swim (0 for strength)
 - `cal` — active calories
 
-**Shortcut actions:**
+**Keep this as its own shortcut** ("Sync Workouts to Daylign") rather than adding it to the metrics one — then an empty metric can't stop it (see the warning above).
 
-1. **Find Workouts** — filter "Start Date is in the last 1 day". (Optionally sort/limit.)
-2. **Repeat with Each** (over the workouts):
-   - **Dictionary**: `type` → Workout *Type*, `minutes` → Workout *Duration* (in minutes), `distance` → Workout *Distance*, `cal` → Workout *Active Energy*.
-   - **Add to Variable** `WorkoutList` (the dictionary).
-3. After the repeat: **Get Contents of URL**
-   - URL: `https://lifestack-d5300-default-rtdb.firebaseio.com/external/workouts/[Formatted Date].json` — *(others: `.../external/u/<your-id>/workouts/[Formatted Date].json`)*
-   - Method: **PUT** (replaces that day's list so re-runs don't duplicate)
-   - Request Body: **JSON** → `WorkoutList`
+**Simple version — one workout, 3 actions.** The app accepts a single workout object, so no Repeat loop is needed and this covers most days:
 
-You can add these actions to the combined shortcut so one run does daily totals **and** the workout list. Re-running is safe: the daily totals PATCH overwrites each value, and the workouts PUT replaces the day's list.
+1. **Format Date** → Current Date → Custom → `yyyy-MM-dd`
+2. **Find Workouts** — filter *Start Date is in the last 1 day*, **Limit = 1**, Sort by Start Date (Latest First)
+3. **Get Contents of URL**
+   - URL: `https://lifestack-d5300-default-rtdb.firebaseio.com/external/workouts/` + **Formatted Date** + `.json`
+   - Method: **PUT** (replaces that day's entry, so re-runs never duplicate)
+   - Request Body: **JSON** — here it *is* JSON, because we're sending an object rather than one number. Add four fields:
+
+   | Field | Type | Value |
+   |---|---|---|
+   | `type` | Text | Workout → *Type* |
+   | `minutes` | Number | Workout → *Duration* |
+   | `distance` | Number | Workout → *Distance* |
+   | `cal` | Number | Workout → *Active Energy* |
+
+Duration may come through in seconds; the app converts anything over 600 to minutes.
+
+**Multiple workouts a day:** drop the Limit, wrap steps in **Repeat with Each** building a **Dictionary** per workout into an **Add to Variable** `WorkoutList`, then PUT `WorkoutList` as the JSON body. The app reads arrays and single objects alike.
 
 ---
 
