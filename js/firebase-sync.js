@@ -56,10 +56,19 @@ function getExternalWorkouts(dateStr) {
   return arr.filter(x => x && typeof x === 'object');
 }
 
+// Sleep arrives in whichever unit the Shortcut summed it in. Apple's sleep
+// samples are categories ("Asleep"), not numbers, so the Shortcut has to sum
+// their DURATIONS — and Shortcuts reports durations in seconds by default.
+// Accept all three plausible units rather than making people do math on-device:
+// seconds (27000), minutes (450) or hours (7.5). Nobody sleeps 1000+ hours, and
+// nobody sleeps under 25 seconds, so the thresholds are unambiguous.
 function getExternalSleep(dateStr) {
   const v = getExternalMetric('sleep', dateStr);
   if (v === null) return null;
-  const hours = v > 24 ? v / 60 : v;
+  let hours;
+  if (v > 1000) hours = v / 3600;      // seconds
+  else if (v > 24) hours = v / 60;     // minutes
+  else hours = v;                      // already hours
   return Math.round(hours * 10) / 10;
 }
 
